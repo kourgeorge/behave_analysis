@@ -1,4 +1,4 @@
-function [pStates,pSeq, fs, bs, s] = myhmmdecode(seq,exptype,tr,e1,e2,varargin)
+function [pStates,pSeq, fs, bs, s] = myhmmdecode(seq,exptype,reward,trR,trNR,eHomo,eHetro,varargin)
 %HMMDECODE calculates the posterior state probabilities of a sequence.
 %   PSTATES = HMMDECODE(SEQ,TRANSITIONS,EMISSIONS) calculates the
 %   posterior state probabilities, PSTATES, of sequence SEQ from a Hidden
@@ -60,20 +60,20 @@ function [pStates,pSeq, fs, bs, s] = myhmmdecode(seq,exptype,tr,e1,e2,varargin)
 
 % tr must be square
 
-numStates = size(tr,1);
-checkTr = size(tr,2);
+numStates = size(trR,1);
+checkTr = size(trR,2);
 if checkTr ~= numStates
     error(message('stats:hmmdecode:BadTransitions'));
 end
 
 % number of rows of e must be same as number of states
 
-checkE  = size(e1,1);
+checkE  = size(eHomo,1);
 if checkE ~= numStates
     error(message('stats:hmmdecode:InputSizeMismatch'));
 end
 
-numSymbols = size(e1,2);
+numSymbols = size(eHomo,2);
 
 % length of exptype should be the same as seq
 % IMPLEMENT
@@ -98,7 +98,7 @@ end
 if ~isnumeric(seq)
     error(message('stats:hmmdecode:MissingSymbolArg'));
 end
-numEmissions = size(e1,2);
+numEmissions = size(eHomo,2);
 if any(seq(:)<1) || any(seq(:)~=round(seq(:))) || any(seq(:)>numEmissions)
      error(message('stats:hmmdecode:BadSequence', numEmissions));
 end
@@ -106,7 +106,7 @@ end
 
 % add extra symbols to start to make algorithm cleaner at f0 and b0
 seq = [numSymbols+1, seq ];
-exptype = [3, exptype ];
+exptype = [-1, exptype ];
 L = length(seq);
 
 % This is what we'd like to do but it is numerically unstable
@@ -131,9 +131,14 @@ s(1) = 1;
 for count = 2:L
     for state = 1:numStates
         if (exptype(count)==1) % homo
-            etemp = e1;
+            etemp = eHomo;
         else
-            etemp = e2;
+            etemp = eHetro;
+        end
+        if (reward(count-1) == 1)
+            tr = trR;
+        else
+            tr = trNR;
         end
         fs(state,count) = etemp(state,seq(count)) .* (sum(fs(:,count-1) .*tr(:,state)));
     end
@@ -158,12 +163,17 @@ end
 bs = ones(numStates,L);
 for count = L-1:-1:1
     for state = 1:numStates
-        if (exptype(count)==1) % homo
-            etemp = e1;
+        if (exptype(count+1)==1) % homo
+            etemp = eHomo;
         else
-            etemp = e2;
+            etemp = eHetro;
         end
-      bs(state,count) = (1/s(count+1)) * sum( tr(state,:)'.* bs(:,count+1) .* etemp(:,seq(count+1))); 
+        if (reward(count) == 1)
+            tr = trR;
+        else
+            tr = trNR;
+        end
+      bs(state,count) = (1/s(count+1)) * sum( tr(state,:)'.* bs(:,count+1) .* etemp(:,seq(count+1)));  
     end
 end
 
@@ -172,6 +182,7 @@ end
 %  b = bs.*repmat([scales(2:end), 1],size(bs,1),1);
 
 pSeq = sum(log(s));
+
 pStates = fs.*bs;
 
 % get rid of the column that we stuck in to deal with the f0 and b0 
