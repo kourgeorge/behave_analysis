@@ -1,4 +1,4 @@
-function [ envtype,seq,states,rewards ] = myhmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, envtypefrac)
+function [ envtype,seq,states,rewards ] = myhmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, envtypefrac, RewardedStates)
 %SYNTHETIC_DATA Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -76,7 +76,7 @@ for count = 1:L
     seq(count) = emit;
     states(count) = state;
     envtype(count) = currentconf;
-    rewards(count) = (seq(count) == 1);
+    rewards(count) = any(seq(count) == RewardedStates);
     currentstate = state;
 end
         

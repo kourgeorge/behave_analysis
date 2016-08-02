@@ -37,8 +37,27 @@ rewards = ones(1, num_trails);
 [est_trans, est_emits] = hmmtrain(emission_seq , guess_trans_reward, guess_emit_homo,'VERBOSE',false, 'maxiterations', 1500);
 
 if (est_trans_reward ==  est_trans)
-    fprintf('Pass\n')
+    fprintf('Test 1 - Pass\n')
 else
-    fprintf('Fail\n')
+    fprintf('Test 1 - Fail\n')
 end
 
+
+%% test 2 generate data using myhmmgeneratedata. The data is only homo 
+% environment and no reward. Compare hmmtrain and myhmmtrain. The
+% difference in the transition probabilitis and the emission probability
+% estimation be close if not identical.
+
+tol = 0.001;
+% on synthetic data with no rewarded states and only homo env type.
+[envtype,emission_seq, states, rewards] = myhmmgenerate(num_trails, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro ,1, []);
+[est_trans_reward, est_trans_noreward , est_emits_homo, est_emits_hetro] = myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,guess_emit_homo, guess_emit_hetro, [1 2], 'VERBOSE',true, 'maxiterations', 1500);
+[est_trans, est_emits] = hmmtrain(emission_seq , est_trans_noreward, guess_emit_homo,'VERBOSE',false, 'maxiterations', 1500);
+
+diff_trans = est_trans_noreward - est_trans;
+diff_emmi = est_emits_homo - est_emits;
+if (all(diff_trans(:)<tol) && all(diff_emmi(:)< tol))
+    fprintf('Test 2 - Pass\n')
+else
+    fprintf('Test 2 - Fail\n')
+end

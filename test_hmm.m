@@ -50,6 +50,8 @@ guess_emit_hetro = [1-eps eps;
              0.5 0.5];
          
 
+         
+% on real data
 csv_file_path = 'C:\Users\kour\OneDrive - University of Haifa\Experimental data\BEHAVIOR\ODORS_2_odorsrelevantsecoindpair_palmarosa for reward_bohno connect with reward\RAT2_0102.csv';
          
 selected_cues_reward = build_exp_data(csv_file_path);
@@ -65,13 +67,8 @@ emission_seq = observation_reward(:,1)';
 envtype = observation_reward(:,2)';
 rewards = observation_reward(:,3)';
 
-%[est_trans_reward, est_trans_noreward , est_emits_homo, est_emits_hetro] = myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,guess_emit_homo, guess_emit_hetro,'VERBOSE',true, 'maxiterations', 1500);
+[est_trans_reward, est_trans_noreward , est_emits_homo, est_emits_hetro] = myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,guess_emit_homo, guess_emit_hetro,'VERBOSE',true, 'maxiterations', 1500);
 
-
-% on synthetic data
-%[envtype,emission_seq, states, rewards] = myhmmgenerate(3000, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro ,0.5);
-%[est_trans_reward, est_trans_noreward , est_emits_homo, est_emits_hetro] = myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,guess_emit_homo, guess_emit_hetro,'VERBOSE',true, 'maxiterations', 1500);
-x = 2;
 
 
 
