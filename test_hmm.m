@@ -68,7 +68,3 @@ envtype = observation_reward(:,2)';
 rewards = observation_reward(:,3)';
 
 [est_trans_reward, est_trans_noreward , est_emits_homo, est_emits_hetro] = myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,guess_emit_homo, guess_emit_hetro,'VERBOSE',true, 'maxiterations', 1500);
-
-
-
-
