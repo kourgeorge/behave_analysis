@@ -92,74 +92,72 @@ end
 
 baumwelch = true;
 
-verbose = false;
-maxiter = 1500;
-% if nargin > 5
-%     %if rem(nargin,2)== 0
-%     %    error(message('stats:hmmtrain:WrongNumberArgs', mfilename));
-%     %end
-%     okargs = {'symbols','tolerance','pseudoemissions','pseudotransitions','maxiterations','verbose','algorithm','trtol','etol'};
-%     dflts  = {[]        []         []                []                  maxiter         verbose   ''           []      []};
-%     [symbols,tol,pseudoE1,pseudoTRr,maxiter,verbose,alg,trtol,etol] = ...
-%         internal.stats.parseArgs(okargs, dflts, varargin{:});
-%
-%
-%     if ~isempty(symbols)
-%         numSymbolNames = numel(symbols);
-%         if ~isvector(symbols) || numSymbolNames ~= numEmissions
-%             error(message('stats:hmmtrain:BadSymbols', numEmissions));
-%         end
-%
-%         % deal with a single sequence first
-%         if ~iscell(seqs) || ischar(seqs{1})
-%             [~, seqs]  = ismember(seqs,symbols);
-%             if any(seqs(:)==0)
-%                 error(message('stats:hmmtrain:MissingSymbol'));
-%             end
-%         else  % now deal with a cell array of sequences
-%             numSeqs = numel(seqs);
-%             newSeqs = cell(numSeqs,1);
-%             for count = 1:numSeqs
-%                 [~, newSeqs{count}] = ismember(seqs{count},symbols);
-%                 if any(newSeqs{count}(:)==0)
-%                     error(message('stats:hmmtrain:MissingSymbol'));
-%                 end
-%             end
-%             seqs = newSeqs;
-%         end
-%     end
-%     if ~isempty(pseudoE1)
-%         [rows, cols] = size(pseudoE1);
-%         if  rows < numStates
-%             error(message('stats:hmmtrain:BadPseudoEmissionsRows'));
-%         end
-%         if  cols < numEmissions
-%             error(message('stats:hmmtrain:BadPseudoEmissionsCols'));
-%         end
-%         numStates = rows;
-%         numEmissions = cols;
-%         pseudoEcounts = true;
-%     end
-%     if ~isempty(pseudoTRr)
-%         [rows, cols] = size(pseudoTRr);
-%         if rows ~= cols
-%             error(message('stats:hmmtrain:BadPseudoTransitions'));
-%         end
-%         if  rows < numStates
-%             error(message('stats:hmmtrain:BadPseudoEmissionsSize'));
-%         end
-%         numStates = rows;
-%         pseudoTRcounts = true;
-%     end
-%     if ischar(verbose)
-%         verbose = any(strcmpi(verbose,{'on','true','yes'}));
-%     end
-%
-%     if ~isempty(alg)
-%         alg = internal.stats.getParamVal(alg,{'baumwelch','viterbi'},'Algorithm');
-%         baumwelch = strcmpi(alg,'baumwelch');
-%     end
-% end
+if nargin > 5
+    %if rem(nargin,2)== 0
+    %    error(message('stats:hmmtrain:WrongNumberArgs', mfilename));
+    %end
+    okargs = {'symbols','tolerance','pseudoemissions','pseudotransitions','maxiterations','verbose','algorithm','trtol','etol'};
+    dflts  = {[]        []         []                []                  maxiter         verbose   ''           []      []};
+    [symbols,tol,pseudoE1,pseudoTRr,maxiter,verbose,alg,trtol,etol] = ...
+        internal.stats.parseArgs(okargs, dflts, varargin{:});
+
+
+    if ~isempty(symbols)
+        numSymbolNames = numel(symbols);
+        if ~isvector(symbols) || numSymbolNames ~= numEmissions
+            error(message('stats:hmmtrain:BadSymbols', numEmissions));
+        end
+
+        % deal with a single sequence first
+        if ~iscell(seqs) || ischar(seqs{1})
+            [~, seqs]  = ismember(seqs,symbols);
+            if any(seqs(:)==0)
+                error(message('stats:hmmtrain:MissingSymbol'));
+            end
+        else  % now deal with a cell array of sequences
+            numSeqs = numel(seqs);
+            newSeqs = cell(numSeqs,1);
+            for count = 1:numSeqs
+                [~, newSeqs{count}] = ismember(seqs{count},symbols);
+                if any(newSeqs{count}(:)==0)
+                    error(message('stats:hmmtrain:MissingSymbol'));
+                end
+            end
+            seqs = newSeqs;
+        end
+    end
+    if ~isempty(pseudoE1)
+        [rows, cols] = size(pseudoE1);
+        if  rows < numStates
+            error(message('stats:hmmtrain:BadPseudoEmissionsRows'));
+        end
+        if  cols < numEmissions
+            error(message('stats:hmmtrain:BadPseudoEmissionsCols'));
+        end
+        numStates = rows;
+        numEmissions = cols;
+        pseudoEcounts = true;
+    end
+    if ~isempty(pseudoTRr)
+        [rows, cols] = size(pseudoTRr);
+        if rows ~= cols
+            error(message('stats:hmmtrain:BadPseudoTransitions'));
+        end
+        if  rows < numStates
+            error(message('stats:hmmtrain:BadPseudoEmissionsSize'));
+        end
+        numStates = rows;
+        pseudoTRcounts = true;
+    end
+    if ischar(verbose)
+        verbose = any(strcmpi(verbose,{'on','true','yes'}));
+    end
+
+    if ~isempty(alg)
+        alg = internal.stats.getParamVal(alg,{'baumwelch','viterbi'},'Algorithm');
+        baumwelch = strcmpi(alg,'baumwelch');
+    end
+end
 
 if isempty(tol)
     tol = 1e-6;
