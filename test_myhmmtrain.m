@@ -23,16 +23,9 @@ guess_trans_reward = [0.8 0.05 0.05 0.05 0.05;
            0.05 0.05 0.05 0.8 0.05
            0.2 0.2 0.2 0.2 0.2];
        
-%test1(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro);
-%test2(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro);
+test1(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro);
+test2(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro);
 
-res=[];
-for seq_length=100:800:8000
-    tot_error = test3(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, seq_length);
-    res=[res;seq_length,tot_error];
-end
-
-plot(res(:,1), res(:,2));
 end
 
 function test1(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro)
@@ -72,7 +65,7 @@ num_trails = 500;
 
 [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] =...
     myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward, ...
-    guess_emit_homo, guess_emit_hetro, [1 2], 'VERBOSE',true, 'maxiterations', 1500);
+    guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', 1500);
 
 [est_trans, est_emits] = hmmtrain(emission_seq , est_trans_noreward, guess_emit_homo,'VERBOSE',false, 'maxiterations', 1500);
 
