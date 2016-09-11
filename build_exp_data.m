@@ -1,4 +1,4 @@
-function res = build_exp_data( csv_file_path)
+function res = build_exp_data(csv_file_path)
 %BUILD_EXP_DATA Summary of this function goes here
 %   The fields of the data files: trail	r	w	c	np	cup	ic_1	ic_2
 %      1.   trail (t)- the trial number
