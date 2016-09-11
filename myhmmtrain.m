@@ -1,4 +1,4 @@
-function [guessTRr,guessTRnr,guessEhomo,guessEhetro,logliks] = myhmmtrain(seqs, exptypes, rewards, guessTRr, guessTRnr, guessEhomo, guessEhetro, varargin)
+function [guessTRr,guessTRnr,guessEhomo,guessEhetro,logliks] = mazehmmtrain(seqs, exptypes, rewards, guessTRr, guessTRnr, guessEhomo, guessEhetro, varargin)
 %HMMTRAIN maximum likelihood estimator of model parameters for an HMM.
 %   [ESTTR, ESTEMIT] = HMMTRAIN(SEQS,TRGUESS,EMITGUESS) estimates the
 %   transition and emission probabilities for a Hidden Markov Model from
@@ -220,7 +220,7 @@ for iteration = 1:maxiter
         
         if baumwelch   % Baum-Welch training
             % get the scaled forward and backward probabilities
-	    [pstates,logPseq,fs,bs,scale] = myhmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
+	    [pstates,logPseq,fs,bs,scale] = mazehmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
             
 	    loglik = loglik + logPseq;
             logf = log(fs);

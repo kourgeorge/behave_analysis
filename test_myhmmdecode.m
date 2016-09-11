@@ -1,4 +1,4 @@
-%test myhmmdecode by comparing it to hmmdecode. The comparison is based n
+%test mazehmmdecode by comparing it to hmmdecode. The comparison is based n
 %the fact that both should return the same values, if only ine environmnt
 %is used and always there is a reward.
 
@@ -32,8 +32,8 @@ reward = ones(1, num_trails);
 [seq,states] = hmmgenerate(num_trails,guessTRr,guessEhomo);
 
 
-%% test 1 - compare between myhmmdecode and the original hmmdecode.
+%% test 1 - compare between mazehmmdecode and the original hmmdecode.
 % bth should give the same result on the special case when thhere is only
 % one envtype and always the agents recieves a reward.
-[pstates,logPseq,fs,bs,scale] = myhmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
+[pstates,logPseq,fs,bs,scale] = mazehmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
 [opstates,ologPseq,ofs,obs,oscale] = hmmdecode(seq,guessTRr,guessEhomo);

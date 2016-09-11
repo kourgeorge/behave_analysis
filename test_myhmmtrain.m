@@ -1,4 +1,4 @@
-function test_myhmmtrain()
+function test_mazehmmtrain()
 
 eps = 0.05;
 guess_emit_homo = [1-eps eps;
@@ -31,7 +31,7 @@ end
 function test1(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro)
 % TEST 1 - create sequence of a single environemnt type (h) 
 % and reward and make sure the reduction of the
-% generalized implementation (myhmmtrain) emits the same results as the original
+% generalized implementation (mazehmmtrain) emits the same results as the original
 % hmm. 
 % generate the sequnce using hmmgenerate (no myhmmgenrate).
 num_trails = 500;
@@ -52,8 +52,8 @@ end
 end
 
 function test2(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro)
-% TEST 2 - generate data using myhmmgeneratedata. The data is only homo 
-% environment and no reward. Compare hmmtrain and myhmmtrain. The
+% TEST 2 - generate data using mazehmmgeneratedata. The data is only homo 
+% environment and no reward. Compare hmmtrain and mazehmmtrain. The
 % difference in the transition probabilitis and the emission probability
 % estimation be close if not identical.
 
@@ -61,7 +61,7 @@ tol = 0.001;
 num_trails = 500;
 % on synthetic data with no rewarded states and only homo env type.
 [envtype,emission_seq, states, rewards] = ...
-    myhmmgenerate(num_trails, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro ,1, []);
+    mazehmmgenerate(num_trails, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro ,1, []);
 
 [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] =...
     myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward, ...
@@ -80,16 +80,16 @@ end
 end
 
 function tot_error = test3(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, num_trails)
-%TEST 3 - generate a sequence of trials using myhmmgenerate with two environment type 
+%TEST 3 - generate a sequence of trials using mazehmmgenerate with two environment type 
 % but no rewarded states. The estimated transition and 
 % emmits probabilities should be the same as the sequence generation parameters. 
 % The guess in this test is the same as the equence generation parametrres.
 
 [envtype,emission_seq, states, rewards] = ...
-    myhmmgenerate(num_trails, guess_trans_reward, guess_trans_noreward, ...
+    mazehmmgenerate(num_trails, guess_trans_reward, guess_trans_noreward, ...
     guess_emit_homo, guess_emit_hetro ,0.5, []);
 [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = ...
-    myhmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,...
+    mazehmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,...
     guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', 1500);
 
 tol = 0.1;

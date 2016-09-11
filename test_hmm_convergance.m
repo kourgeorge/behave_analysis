@@ -1,5 +1,5 @@
 function test_hmm_convergance()
-% generate a sequence of trials using myhmmgenerate with two environment type but no rewarded states. 
+% generate a sequence of trials using mazehmmgenerate with two environment type but no rewarded states. 
 % The estimated transition and emmits probabilities should be the same as the sequence generation parameters. 
 % The guess in this test is the same as the equence generation parametrres.
 
@@ -73,7 +73,7 @@ function test_seq_len()
 env_type_frac = 0.5;
 
 [envtype,emissions, ~, rewards] = ...
-    myhmmgenerate(4000, realTRr, realTRnr, ...
+    mazehmmgenerate(4000, realTRr, realTRnr, ...
     realEhomo, realEhetro ,env_type_frac, []);
 
 max_iterations = 500;
@@ -105,7 +105,7 @@ function test_max_iter()
 
 env_type_frac = 0.5;
 [envtype,emissions, ~, rewards] = ...
-    myhmmgenerate(1500, realTRr, realTRnr, ...
+    mazehmmgenerate(1500, realTRr, realTRnr, ...
     realEhomo, realEhetro ,env_type_frac, []);
 
 max_iters = 1000:1000:4000;
@@ -131,7 +131,7 @@ function tot_error = run_hmm_train(seq_data, guess_trans_reward, guess_trans_nor
 [realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
 
 [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = ...
-    myhmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
+    mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
     guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', max_iterations);
 
 diff_trans = norm(est_trans_noreward - realTRnr);

@@ -1,4 +1,4 @@
-function [pStates,pSeq, fs, bs, s] = myhmmdecode(seq,exptype,reward,trR,trNR,eHomo,eHetro,varargin)
+function [pStates,pSeq, fs, bs, s] = mazehmmdecode(seq,exptype,reward,trR,trNR,eHomo,eHetro,varargin)
 %HMMDECODE calculates the posterior state probabilities of a sequence.
 %   PSTATES = HMMDECODE(SEQ,TRANSITIONS,EMISSIONS) calculates the
 %   posterior state probabilities, PSTATES, of sequence SEQ from a Hidden
