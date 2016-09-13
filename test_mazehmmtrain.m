@@ -1,34 +1,27 @@
 function test_mazehmmtrain()
 
 eps = 0.05;
-guess_emit_homo = [1-eps eps;
+e = [1-eps eps;
              eps 1-eps;
              1-eps eps;
              eps 1-eps;
              0.5 0.5];
          
-guess_emit_hetro = [1-eps eps;
-             eps 1-eps;
-             eps 1-eps;
-             1-eps eps;
-             0.5 0.5];
-guess_trans_noreward = [0.6 0.25 0.05 0.05 0.05;
+
+tr = [0.6 0.25 0.05 0.05 0.05;
            0.25 0.6 0.05 0.05 0.05;
            0.05 0.05 0.6 0.25 0.05;
            0.05 0.05 0.25 0.6 0.05
            0.2 0.2 0.2 0.2 0.2];
-guess_trans_reward = [0.8 0.05 0.05 0.05 0.05;
-           0.05 0.8 0.05 0.05 0.05;
-           0.05 0.05 0.8 0.05 0.05;
-           0.05 0.05 0.05 0.8 0.05
-           0.2 0.2 0.2 0.2 0.2];
+
        
-test1(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro);
-test2(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro);
+%test1(tr, e);
+%test2(tr, e);
+test3(tr, e)
 
 end
 
-function test1(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro)
+function test1(tr, e)
 % TEST 1 - create sequence of a single environemnt type (h) 
 % and reward and make sure the reduction of the
 % generalized implementation (mazehmmtrain) emits the same results as the original
@@ -37,13 +30,15 @@ function test1(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_
 num_trails = 500;
 envtype = ones(1, num_trails); 
 rewards = ones(1, num_trails);
-[emission_seq,states] = hmmgenerate(num_trails,guess_trans_noreward,guess_emit_hetro);
-[est_trans_reward, est_trans_noreward , est_emits_homo, est_emits_hetro] = ...
-    mazehmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ...
-    ,guess_emit_homo, guess_emit_hetro,'VERBOSE',false, 'maxiterations', 1500);
-[est_trans, est_emits] = hmmtrain(emission_seq , guess_trans_reward, guess_emit_homo,'VERBOSE',false, 'maxiterations', 1500);
+[emission_seq, ~] = hmmgenerate(num_trails,tr,e);
+guess_tr = rand(5);
+guess_e = rand(5,2);
+[est_tr_mazehmm, ~ , est_e_mazehmm, ~] = ...
+    mazehmmtrain(emission_seq, envtype , rewards ,guess_tr ,guess_tr ...
+    ,guess_e, guess_e,'VERBOSE',false, 'maxiterations', 1500);
+[est_tr_hmm, est_e_hmm] = hmmtrain(emission_seq , guess_tr, guess_e,'VERBOSE',false, 'maxiterations', 1500);
 
-if (est_trans_reward ==  est_trans)
+if (all(all(est_tr_mazehmm ==  est_tr_hmm)) && all(all(est_e_mazehmm == est_e_hmm)))
     fprintf('Test 1 - Pass\n')
 else
     fprintf('Test 1 - Fail\n')
@@ -51,27 +46,28 @@ end
 
 end
 
-function test2(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro)
+function test2(tr, e)
 % TEST 2 - generate data using mazehmmgeneratedata. The data is only homo 
 % environment and no reward. Compare hmmtrain and mazehmmtrain. The
 % difference in the transition probabilitis and the emission probability
-% estimation be close if not identical.
+% estimation should be identical.
 
-tol = 0.001;
 num_trails = 500;
 % on synthetic data with no rewarded states and only homo env type.
-[envtype,emission_seq, states, rewards] = ...
-    mazehmmgenerate(num_trails, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro ,1, []);
+[envtype,emission_seq, ~, rewards] = ...
+    mazehmmgenerate(num_trails, tr, tr, e, e ,1, []);
 
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] =...
-    mazehmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward, ...
-    guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', 1500);
+guess_tr = rand(5);
+guess_e = rand(5,2);
 
-[est_trans, est_emits] = hmmtrain(emission_seq , est_trans_noreward, guess_emit_homo,'VERBOSE',false, 'maxiterations', 1500);
+[~, est_tr_mazehmm, est_e_mazehmm, ~] =...
+    mazehmmtrain(emission_seq, envtype , rewards ,guess_tr ,guess_tr, ...
+    guess_e, guess_e, 'VERBOSE', false, 'maxiterations', 1500);
 
-diff_trans = est_trans_noreward - est_trans;
-diff_emits = est_emits_homo - est_emits;
-if (all(diff_trans(:)<tol) && all(diff_emits(:)< tol))
+[est_tr_hmm, est_e_hmm] = hmmtrain(emission_seq , guess_tr, guess_e,'VERBOSE',false, 'maxiterations', 1500);
+
+
+if (all(all(est_tr_mazehmm ==  est_tr_hmm)) && all(all(est_e_mazehmm == est_e_hmm)))
     fprintf('Test 2 - Pass\n')
 else
     fprintf('Test 2 - Fail\n')
@@ -79,28 +75,32 @@ end
 
 end
 
-function tot_error = test3(guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, num_trails)
+function test3(tr, e)
 %TEST 3 - generate a sequence of trials using mazehmmgenerate with two environment type 
 % but no rewarded states. The estimated transition and 
 % emmits probabilities should be the same as the sequence generation parameters. 
 % The guess in this test is the same as the equence generation parametrres.
 
-[envtype,emission_seq, states, rewards] = ...
-    mazehmmgenerate(num_trails, guess_trans_reward, guess_trans_noreward, ...
-    guess_emit_homo, guess_emit_hetro ,0.5, []);
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = ...
-    mazehmmtrain(emission_seq, envtype , rewards ,guess_trans_reward ,guess_trans_noreward ,...
-    guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', 1500);
+num_trails = 10000;
 
-tol = 0.1;
-diff_trans = est_trans_noreward - guess_trans_noreward;
-diff_emits_homo = est_emits_homo - guess_emit_homo;
-diff_emits_hetro = est_emits_hetro - guess_emit_hetro;
-if (all(diff_trans(:)<tol) && all(diff_emits_homo(:)< tol) && all(diff_emits_hetro(:)< tol))
+guess_tr = rand(5);
+guess_e = rand(5,2);
+
+[envtype, seq, ~, rewards] = ...
+    mazehmmgenerate(num_trails, tr, tr, e, e ,0.5, []);
+[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = ...
+    mazehmmtrain(seq, envtype , rewards ,guess_tr ,guess_tr ,...
+    guess_e, guess_e, 'VERBOSE', false, 'maxiterations', 1500);
+
+
+[est_tr_hmm, est_e_hmm] = hmmtrain(seq, guess_tr, guess_e, 'maxiterations', 1500);
+tol = 0.2;
+diff_trans = est_trans_noreward - est_tr_hmm;
+diff_emits_hetro = est_emits_hetro - est_e_hmm;
+if (all(diff_trans(:)<tol)  && all(diff_emits_hetro(:)< tol))
     fprintf('Test 3 - Pass\n')
 else
     fprintf('Test 3 - Fail\n')
 end
-tot_error = sum(abs(diff_trans(:)))+sum(abs(diff_emits_homo(:)))+sum(abs(diff_emits_hetro(:)));
 end
  

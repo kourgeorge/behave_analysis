@@ -1,4 +1,4 @@
-function [ envtype,seq,states,rewards ] = mazehmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, envtypefrac, RewardedStates)
+function [envtype,seq,states,rewards ] = mazehmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, envtypefrac, RewardedStates)
 %SYNTHETIC_DATA Summary of this function goes here
 %   Detailed explanation goes here
 
