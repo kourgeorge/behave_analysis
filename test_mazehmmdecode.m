@@ -32,7 +32,7 @@ reward = ones(1, num_trails);
 [seq,states] = hmmgenerate(num_trails,guessTRr,guessEhomo);
 
 
-%% test 1 - compare between mazehmmdecode and the original hmmdecode.
+% test 1 - compare between mazehmmdecode and the original hmmdecode.
 % bth should give the same result on the special case when thhere is only
 % one envtype and always the agents recieves a reward.
 [pstates,logPseq,fs,bs,scale] = mazehmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
