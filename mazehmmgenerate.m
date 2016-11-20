@@ -1,4 +1,4 @@
-function [envtype,seq,states,rewards ] = mazehmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, envtypefrac, RewardedStates)
+function [envtype,seq,states,rewards ] = mazehmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, envtypefrac, rewarded_emits)
 %SYNTHETIC_DATA Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -23,7 +23,7 @@ ecHomo = ecHomo./repmat(ecHomo(:,end),1,numEmissions);
 ecHetro = ecHetro./repmat(ecHetro(:,end),1,numEmissions);
 
 
-currentstate = 5;
+currentstate = numStates;
 seq = zeros(1,L);
 states = zeros(1,L);
 envtype = zeros(1,L);
@@ -76,7 +76,7 @@ for count = 1:L
     seq(count) = emit;
     states(count) = state;
     envtype(count) = currentconf;
-    rewards(count) = any(seq(count) == RewardedStates);
+    rewards(count) = rewarded_emits(currentconf,emit);
     currentstate = state;
 end
         
