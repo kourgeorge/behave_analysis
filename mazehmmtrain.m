@@ -100,14 +100,14 @@ if nargin > 5
     dflts  = {[]        []         []                []                  maxiter         verbose   ''           []      []};
     [symbols,tol,pseudoE1,pseudoTRr,maxiter,verbose,alg,trtol,etol] = ...
         internal.stats.parseArgs(okargs, dflts, varargin{:});
-
-
+    
+    
     if ~isempty(symbols)
         numSymbolNames = numel(symbols);
         if ~isvector(symbols) || numSymbolNames ~= numEmissions
             error(message('stats:hmmtrain:BadSymbols', numEmissions));
         end
-
+        
         % deal with a single sequence first
         if ~iscell(seqs) || ischar(seqs{1})
             [~, seqs]  = ismember(seqs,symbols);
@@ -152,7 +152,7 @@ if nargin > 5
     if ischar(verbose)
         verbose = any(strcmpi(verbose,{'on','true','yes'}));
     end
-
+    
     if ~isempty(alg)
         alg = internal.stats.getParamVal(alg,{'baumwelch','viterbi'},'Algorithm');
         baumwelch = strcmpi(alg,'baumwelch');
@@ -220,9 +220,9 @@ for iteration = 1:maxiter
         
         if baumwelch   % Baum-Welch training
             % get the scaled forward and backward probabilities
-	    [pstates,logPseq,fs,bs,scale] = mazehmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
+            [pstates,logPseq,fs,bs,scale] = mazehmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
             
-	    loglik = loglik + logPseq;
+            loglik = loglik + logPseq;
             logf = log(fs);
             logb = log(bs);
             logGEhomo = log(guessEhomo);
@@ -232,6 +232,7 @@ for iteration = 1:maxiter
             % f and b start at 0 so offset seq by one
             seq = [0 seq];
             exptype = [0 exptype];
+            reward = [0 reward];
             
             for k = 1:numStates
                 for l = 1:numStates

@@ -106,7 +106,8 @@ end
 
 % add extra symbols to start to make algorithm cleaner at f0 and b0
 seq = [numSymbols+1, seq ];
-exptype = [-1, exptype ];
+exptype = [-1, exptype];
+reward = [-1, reward];
 L = length(seq);
 
 % This is what we'd like to do but it is numerically unstable
@@ -131,16 +132,16 @@ s(1) = 1;
 for count = 2:L
     for state = 1:numStates
         if (exptype(count)==1) % homo
-            etemp = eHomo;
+            e = eHomo;
         else
-            etemp = eHetro;
+            e = eHetro;
         end
         if (reward(count-1) == 1)
             tr = trR;
         else
             tr = trNR;
         end
-        fs(state,count) = etemp(state,seq(count)) .* (sum(fs(:,count-1) .*tr(:,state)));
+        fs(state,count) = e(state,seq(count)) .* (sum(fs(:,count-1) .*tr(:,state)));
     end
     % scale factor normalizes sum(fs,count) to be 1. 
     s(count) =  sum(fs(:,count));
@@ -164,16 +165,16 @@ bs = ones(numStates,L);
 for count = L-1:-1:1
     for state = 1:numStates
         if (exptype(count+1)==1) % homo
-            etemp = eHomo;
+            e = eHomo;
         else
-            etemp = eHetro;
+            e = eHetro;
         end
         if (reward(count) == 1)
             tr = trR;
         else
             tr = trNR;
         end
-      bs(state,count) = (1/s(count+1)) * sum( tr(state,:)'.* bs(:,count+1) .* etemp(:,seq(count+1)));  
+      bs(state,count) = (1/s(count+1)) * sum( tr(state,:)'.* bs(:,count+1) .* e(:,seq(count+1))); 
     end
 end
 
