@@ -1,8 +1,6 @@
-function test_hmmgenerate()
+function test_mazehmmgenerate()
 
-
-
-%test_basics();
+test_basics();
 test2();
 
 end
@@ -64,15 +62,15 @@ trNR = [0.2 0.4 0.4;
     0.4 0.2 0.4;
     0.4 0.4 0.2];
 
-num_trials = 500;
+num_trials = 2000;
 [~,mazeseq,~,~] = mazehmmgenerate(num_trials, trR, trNR, eH, eT, 1, [0 0; 0 0] );
 
 [seq, ~] = hmmgenerate(num_trials, trNR, eH);
 
-guess_tr = rand(3);
-guess_e = rand(3,2);
+guess_tr = getrandomdistribution(3,3);
+guess_e = getrandomdistribution(3,2);
 
-[guessTR,guessE,logliks] = hmmtrain(mazeseq, guess_tr, guess_e, 'maxiterations',500);
+[guessTR,guessE,logliks] = hmmtrain(mazeseq, guess_tr, guess_e, 'maxiterations',1500);
 
-[guessTR2,guessE2,logliks2] = hmmtrain(seq, guess_tr, guess_e, 'maxiterations', 500);
+[guessTR2,guessE2,logliks2] = hmmtrain(seq, guess_tr, guess_e, 'maxiterations', 1500);
 end
