@@ -59,7 +59,7 @@ function Ddistance = getdistanceforsequence(from, to, interval)
 env_type_frac = 0.5;
 [envtype,emissions, ~, rewards] = ...
     mazehmmgenerate(1500, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, [1 0; 1 0]);
+    realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
 
 tr_guess = getrandomdistribution(4,4);
