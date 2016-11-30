@@ -98,7 +98,7 @@ if nargin > 5
     %end
     okargs = {'symbols','tolerance','pseudoemissions','pseudotransitions','maxiterations','verbose','algorithm','trtol','etol'};
     dflts  = {[]        []         []                []                  maxiter         verbose   ''           []      []};
-    [symbols,tol,pseudoE1,pseudoTRr,maxiter,verbose,alg,trtol,etol] = ...
+    [symbols,tol,pseudoEhomo,pseudoTRr,maxiter,verbose,alg,trtol,etol] = ...
         internal.stats.parseArgs(okargs, dflts, varargin{:});
     
     
@@ -126,8 +126,8 @@ if nargin > 5
             seqs = newSeqs;
         end
     end
-    if ~isempty(pseudoE1)
-        [rows, cols] = size(pseudoE1);
+    if ~isempty(pseudoEhomo)
+        [rows, cols] = size(pseudoEhomo);
         if  rows < numStates
             error(message('stats:hmmtrain:BadPseudoEmissionsRows'));
         end
@@ -137,6 +137,7 @@ if nargin > 5
         numStates = rows;
         numEmissions = cols;
         pseudoEcounts = true;
+        pseudoEhetro = pseudoEhomo;
     end
     if ~isempty(pseudoTRr)
         [rows, cols] = size(pseudoTRr);
