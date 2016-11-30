@@ -33,7 +33,13 @@ reward = ones(1, num_trails);
 
 
 % test 1 - compare between mazehmmdecode and the original hmmdecode.
-% bth should give the same result on the special case when thhere is only
+% bth should give the same result on the special case when there is only
 % one envtype and always the agents recieves a reward.
 [pstates,logPseq,fs,bs,scale] = mazehmmdecode(seq,exptype,reward,guessTRr, guessTRnr,guessEhomo,guessEhetro);
 [opstates,ologPseq,ofs,obs,oscale] = hmmdecode(seq,guessTRr,guessEhomo);
+
+if (all(all(fs==ofs)))
+    disp('Pass')
+else
+    disp('Fail')
+end
