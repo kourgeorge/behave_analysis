@@ -15,12 +15,14 @@ tr = [0.6 0.25 0.05 0.05 0.05;
            0.2 0.2 0.2 0.2 0.2];
 
        
-%test1(tr, e);
+test1(tr, e);
 %test2(tr, e);
 %test3(tr, e);
 %test4();
 %compare_mazehmm_and_hmm_core_exp();
-compare_mazehmm_and_hmm_random();
+%compare_mazehmm_and_hmm_random_noreward();
+%compare_mazehmm_and_hmm_random_reward();
+%compare_mazehmm_and_hmm_random_both();
 
 end
 
@@ -32,11 +34,11 @@ function test1(tr, e)
 % generate the sequnce using hmmgenerate (no myhmmgenrate).
 num_trails = 500;
 envtype = ones(1, num_trails); 
-rewards = ones(1, num_trails);
+rewards = zeros(1, num_trails);
 [emission_seq, ~] = hmmgenerate(num_trails,tr,e);
 guess_tr = rand(5);
 guess_e = rand(5,2);
-[est_tr_mazehmm, ~ , est_e_mazehmm, ~] = ...
+[~, est_tr_mazehmm , est_e_mazehmm, ~] = ...
     mazehmmtrain(emission_seq, envtype , rewards ,guess_tr ,guess_tr ...
     ,guess_e, guess_e,'VERBOSE',false, 'maxiterations', 1500);
 [est_tr_hmm, est_e_hmm] = hmmtrain(emission_seq , guess_tr, guess_e,'VERBOSE',false, 'maxiterations', 1500);
@@ -58,7 +60,7 @@ function test2(tr, e)
 num_trails = 500;
 % on synthetic data with no rewarded states and only homo env type.
 [envtype,emission_seq, ~, rewards] = ...
-    mazehmmgenerate(num_trails, tr, tr, e, e ,1, []);
+    mazehmmgenerate(num_trails, tr, tr, e, e ,1, [0 0;0 0;]);
 
 guess_tr = rand(5);
 guess_e = rand(5,2);
@@ -84,19 +86,19 @@ function test3(tr, e)
 % emmits probabilities should be the same as the sequence generation parameters. 
 % The guess in this test is the same as the equence generation parametrres.
 
-num_trails = 10000;
+num_trails = 100;
 
 guess_tr = rand(5);
 guess_e = rand(5,2);
 
 [envtype, seq, ~, rewards] = ...
-    mazehmmgenerate(num_trails, tr, tr, e, e ,0.5, []);
+    mazehmmgenerate(num_trails, tr, tr, e, e ,0.5, [0 0; 0 0]);
 [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = ...
     mazehmmtrain(seq, envtype , rewards ,guess_tr ,guess_tr ,...
-    guess_e, guess_e, 'VERBOSE', false, 'maxiterations', 1500);
+    guess_e, guess_e, 'VERBOSE', false, 'maxiterations', 500);
 
 
-[est_tr_hmm, est_e_hmm] = hmmtrain(seq, guess_tr, guess_e, 'maxiterations', 1500);
+[est_tr_hmm, est_e_hmm] = hmmtrain(seq, guess_tr, guess_e, 'maxiterations', 500);
 tol = 0.2;
 diff_trans = est_trans_noreward - est_tr_hmm;
 diff_emits_hetro = est_emits_hetro - est_e_hmm;
@@ -217,7 +219,7 @@ end
 end
 
 
-function compare_mazehmm_and_hmm_random()
+function compare_mazehmm_and_hmm_random_noreward()
 
 % 1. Generate a sequence of outputs using hmmgenerate with no reward
 % 2. Train hmm based on the observation sequnce
@@ -266,6 +268,112 @@ else
     disp('Fail')
 end
 end
+
+function compare_mazehmm_and_hmm_random_reward()
+
+% 1. Generate a sequence of outputs using hmmgenerate with reward
+% 2. Train hmm based on the observation sequence
+% 3. Train mazeHmm on the onservations
+% 4. Check the difference in the probability matrices and the latent states.
+
+
+eH = [0.1 0.9;
+    0.9 0.1];
+
+eT = [0.9 0.1;
+    0.1 0.9]; 
+         
+trR = [0.1 0.9 
+    0.9 0.1];
+
+eps = 0.1;
+guess_eH = [.5 .5; .5 .5] + [-eps eps; eps -eps];
+guess_eT = [.5 .5; .5 .5] + [eps -eps; -eps eps];
+guess_tr = [0.5 0.5;0.5 0.5];
+
+num_trials = 100;
+[envtype,seq,states,rewards] = mazehmmgenerate(num_trials, trR, trR, eH, eT, 0.5, [1 1; 1 1] );
+
+
+[est_tr_hmm, est_e_hmm, logliks_hmm] = hmmtrain(seq, guess_tr, [.5 .5; .5 .5], 'maxiterations', 500, 'VERBOSE', true);
+
+
+[est_trR_mazehmm, est_trNR_mazehmm, est_eHomo_mazehmm,est_eHetro_mazehmm,logliks_mazehmm] =...
+    mazehmmtrain(seq, envtype , rewards ,guess_tr ,guess_tr, ...
+    guess_eH, guess_eT, 'VERBOSE', true, 'maxiterations', 500);
+
+
+diff_tr_hmm = dist_prob_matrices(trR, trR, est_tr_hmm, est_tr_hmm);
+diff_emits_hmm = dist_prob_matrices(eH, eT, est_e_hmm, est_e_hmm);
+diff_hmm = diff_tr_hmm+diff_emits_hmm;
+
+diff_tr_mazehmm = dist_prob_matrices(trR, trR, est_trR_mazehmm, est_trR_mazehmm);
+diff_emits_mazehmm = dist_prob_matrices(eH, eT, est_eHomo_mazehmm, est_eHetro_mazehmm);
+diff_mazehmm =  diff_tr_mazehmm+diff_emits_mazehmm;
+
+if (diff_tr_hmm>diff_tr_mazehmm && diff_emits_hmm>diff_emits_mazehmm)
+    disp('Pass')
+else
+    disp('Fail')
+end
+end
+
+
+
+function compare_mazehmm_and_hmm_random_both()
+
+% 1. Generate a sequence of outputs using hmmgenerate with reward
+% 2. Train hmm based on the observation sequnce
+% 3. Train mazeHmm on the onservations
+% 4. Check the difference in the probability matrices and the latent
+% states.
+
+
+eH = [0.1 0.9;
+    0.9 0.1];
+
+eT = [0.9 0.1;
+    0.1 0.9]; 
+         
+trNR = [0.1 0.9 
+    0.9 0.1];
+
+
+trR = [0.9 0.1 
+    0.1 0.9];
+
+eps = 0.2;
+guess_eH = [.5 .5; .5 .5] + [-eps eps; eps -eps];
+guess_eT = [.5 .5; .5 .5] + [eps -eps; -eps eps];
+guess_tr = [0.5 0.5;0.5 0.5];
+
+num_trials = 5;
+[envtype,seq,states,rewards] = mazehmmgenerate(num_trials, trR, trR, eH, eT, 0.5, [1 0; 0 1] );
+
+
+[est_tr_hmm, est_e_hmm, logliks_hmm] = hmmtrain(seq, guess_tr, [.5 .5; .5 .5], 'maxiterations', 500, 'VERBOSE', true);
+
+
+[est_trR_mazehmm, est_trNR_mazehmm, est_eHomo_mazehmm,est_eHetro_mazehmm,logliks_mazehmm] =...
+    mazehmmtrain(seq, envtype , rewards ,guess_tr ,guess_tr, ...
+    guess_eH, guess_eT, 'VERBOSE', true, 'maxiterations', 500);
+
+
+diff_tr_hmm = dist_prob_matrices(trR, trR, est_tr_hmm, est_tr_hmm);
+diff_emits_hmm = dist_prob_matrices(eH, eT, est_e_hmm, est_e_hmm);
+diff_hmm = diff_tr_hmm+diff_emits_hmm;
+
+diff_tr_mazehmm = dist_prob_matrices(trR, trNR, est_trR_mazehmm, est_trNR_mazehmm);
+diff_emits_mazehmm = dist_prob_matrices(eH, eT, est_eHomo_mazehmm, est_eHetro_mazehmm);
+diff_mazehmm =  diff_tr_mazehmm+diff_emits_mazehmm;
+
+if (diff_tr_hmm>diff_tr_mazehmm && diff_emits_hmm>diff_emits_mazehmm)
+    disp('Pass')
+else
+    disp('Fail')
+end
+end
+
 
 %%%%%%%%%% Helper Functions %%%%%%%%%
 function dist = dist_prob_matrices(true1, true2, est1, est2)
