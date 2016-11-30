@@ -23,7 +23,7 @@ ecHomo = ecHomo./repmat(ecHomo(:,end),1,numEmissions);
 ecHetro = ecHetro./repmat(ecHetro(:,end),1,numEmissions);
 
 
-currentstate = numStates;
+currentstate = 1;
 seq = zeros(1,L);
 states = zeros(1,L);
 envtype = zeros(1,L);
@@ -40,7 +40,7 @@ for count = 1:L
     if (count == 1)
         lastreward = 0; %no reward at trial 0
     else
-        lastreward = (seq(count-1) == 1);
+        lastreward = (rewards(count-1) == 1);
     end
     
     % calculate state transition
@@ -79,5 +79,3 @@ for count = 1:L
     rewards(count) = rewarded_emits(currentconf,emit);
     currentstate = state;
 end
-        
-
