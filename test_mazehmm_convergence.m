@@ -3,23 +3,36 @@ function test_mazehmm_convergence()
 % The estimated transition and emmits probabilities should be the same as the sequence generation parameters.
 % The guess in this test is the same as the equence generation parametrres.
 
-res = [];
-steps = 5;
-for i=1:5
-    res=[res;getdistanceforsequence(10,1000,steps)];
+tr_res = [];
+e_res = [];
+steps = 30;
+from = 10;
+to = 1000;
+for i=1:10
+    [trdistances,edistances] = getdistanceforsequence(from,to,steps);
+    tr_res=[tr_res;trdistances];
+    e_res = [e_res; edistances];
 end
 
-
-f=fit(linspace(10,1000,steps)',mean(res)','poly2');
-shadedErrorBar(linspace(1,1000,steps),res,{@mean,@std},'*b',3)
+figure();
+f=fit(linspace(from,to,steps)',mean(tr_res)','poly2');
+shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@std},'*b',3)
 hold on
 plot(f)
 xlabel('Sequnce length')
 ylabel('KL(E||T)')
-title('Modified Baum Welch - Estimation accuracy vs. Sequence length')
+title('Modified Baum Welch Transition Matrices Estimation Accuracy vs. Sequence length')
 hold off
 
-%test_max_iter();
+figure();
+f=fit(linspace(from,to,steps)',mean(e_res)','poly2');
+shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@std},'*b',3)
+hold on
+plot(f)
+xlabel('Sequnce length')
+ylabel('KL(E||T)')
+title('Modified Baum Welch - Emiision Matrices Estimation Accuracy vs. Sequence length')
+hold off
 
 end
 
@@ -49,7 +62,7 @@ trNR = [0.1 0.3 0.3 0.3;
 
 end
 
-function Ddistance = getdistanceforsequence(from, to, interval)
+function [Trdistance,Edistance] = getdistanceforsequence(from, to, interval)
 % checks the correlation between the sequence length and the error in the
 % estimated matrices. The longer the sequence the more correct should be the trained model.
 
@@ -58,7 +71,7 @@ function Ddistance = getdistanceforsequence(from, to, interval)
 
 env_type_frac = 0.5;
 [envtype,emissions, ~, rewards] = ...
-    mazehmmgenerate(1500, realTRr, realTRnr, ...
+    mazehmmgenerate(to, realTRr, realTRnr, ...
     realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
 
@@ -66,8 +79,9 @@ tr_guess = getrandomdistribution(4,4);
 e_guess = getrandomdistribution(4,2);
 
 
-max_iter = 1500;
-Ddistance = [];
+max_iter = 50;
+Trdistance = [];
+Edistance = [];
 lengths = linspace(from,to, interval);
 
 for seq_length=floor(lengths)
@@ -77,7 +91,8 @@ for seq_length=floor(lengths)
     seq_data.rewards = rewards(1:seq_length);
     
     Ddistanceiter = run_hmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
-    Ddistance = [Ddistance, Ddistanceiter(1)];
+    Trdistance = [Trdistance, Ddistanceiter(1)];
+    Edistance = [Edistance, Ddistanceiter(2)];
 end
 end
 
