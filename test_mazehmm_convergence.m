@@ -4,17 +4,20 @@ function test_mazehmm_convergence()
 % The guess in this test is the same as the equence generation parametrres.
 
 res = [];
-for i=1:50
-    res=[res;getdistanceforsequence(10,1000,30)];
+steps = 5;
+for i=1:5
+    res=[res;getdistanceforsequence(10,1000,steps)];
 end
 
-mean_res = mean(res);
 
-plot(mean_res);
-title('Model accuracy vs. sequence length.');
-xlabel('# of trials');
-ylabel('d(Mreal, Mest.)');
-
+f=fit(linspace(10,1000,steps)',mean(res)','poly2');
+shadedErrorBar(linspace(1,1000,steps),res,{@mean,@std},'*b',3)
+hold on
+plot(f)
+xlabel('Sequnce length')
+ylabel('KL(E||T)')
+title('Modified Baum Welch - Estimation accuracy vs. Sequence length')
+hold off
 
 %test_max_iter();
 
@@ -119,8 +122,8 @@ function tot_error = run_hmm_train(seq_data, guess_trans_reward, guess_trans_nor
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
     guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', max_iterations);
 
-diff_trans = sum(KLDiv(est_trans_reward ,realTRr));
-diff_emits = sum(KLDiv(est_emits_homo, realEhomo));
+diff_trans = mean([sum(KLDiv(est_trans_reward ,realTRr)), sum(KLDiv(est_trans_noreward ,realTRnr))]);
+diff_emits = mean([sum(KLDiv(est_emits_homo, realEhomo)), sum(KLDiv(est_emits_hetro, realEhetro))]);
 tot_error = [diff_trans, diff_emits];
 
 end

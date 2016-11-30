@@ -5,17 +5,19 @@ function test_hmm_convergence()
 
 
 res = [];
-for i=1:50
-    res=[res;getdistanceforsequence(10,1000,30)];
+steps = 5;
+for i=1:5
+    res=[res;getdistanceforsequence(10,1000,5)];
 end
 
-mean_res = mean(res);
-
-plot(mean_res);
-title('Model accuracy vs. sequence length.');
-xlabel('# of trials');
-ylabel('d(Mreal, Mest.)');
-
+f=fit(linspace(10,1000,steps)',mean(res)','poly2');
+shadedErrorBar(linspace(1,1000,steps),res,{@mean,@std},'*b',3)
+hold on
+plot(f)
+xlabel('Sequnce length')
+ylabel('KL(E||T)')
+title('Baum Welch - Estimation accuracy vs. Sequence length')
+hold off
 
 %test_max_iter();
 
