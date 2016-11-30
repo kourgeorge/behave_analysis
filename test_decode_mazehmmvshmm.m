@@ -114,7 +114,7 @@ function [mazehmmestimate,hmmestimate] = run_train(seq_data, guess, max_iter)
 
 
 [hmmestimate.tr, hmmestimate.e] = ...
-    hmmtrain(seq_data.emissions, guess.tr, guess.tr, 'VERBOSE',false, 'maxiterations', max_iter);
+    hmmtrain(seq_data.emissions, guess.tr, guess.e, 'VERBOSE',false, 'maxiterations', max_iter);
 
 end
 

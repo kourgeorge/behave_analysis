@@ -57,15 +57,17 @@ function [hmmprobs, mazehmmprobs, mazehmmprobsreal] = calcseqposteriorprobabilit
 env_type_frac = 0.5;
 [envtype,emissions, states, rewards] = ...
     mazehmmgenerate(1500, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, [1 0; 1 0]);
+    realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
 [testseq.envtype,testseq.emissions, testseq.states, testseq.rewards] = ...
     mazehmmgenerate(200, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, [1 0; 1 0]);
+    realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
 
-guess.tr = getrandomdistribution(4,4);
-guess.e = getrandomdistribution(4,2);
+guess.trr = getrandomdistribution(4,4);
+guess.trnr = getrandomdistribution(4,4);
+guess.eh = getrandomdistribution(4,2);
+guess.et = getrandomdistribution(4,2);
 
 
 max_iter = 1500;
@@ -99,7 +101,8 @@ estimatedstates_mazehmm = mazehmmviterbi(testseq.emissions,testseq.envtype,tests
 estimatedstates_hmm = hmmviterbi(testseq.emissions,hmmestimate.tr,hmmestimate.e);
 
 [realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
-estimatedstates_real=mazehmmviterbi(testseq.emissions,testseq.envtype,testseq.rewards,realTRr,realTRnr,realEhomo,realEhetro);
+estimatedstates_real=mazehmmviterbi(testseq.emissions,testseq.envtype,testseq.rewards,...
+    realTRr,realTRnr,realEhomo,realEhetro);
 
 correctstates_mazehmm = sum(estimatedstates_mazehmm==testseq.states)/200;
 correctstates_hmm = sum(estimatedstates_hmm==testseq.states)/200;
@@ -111,11 +114,11 @@ end
 function [mazehmmestimate,hmmestimate] = train_models(seq_data, guess, max_iter) 
 
 [mazehmmestimate.tr_reward, mazehmmestimate.tr_noreward, mazehmmestimate.e_homo, mazehmmestimate.e_hetro] = ...
-    mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess.tr ,guess.tr ,...
-    guess.e, guess.e, 'VERBOSE',false, 'maxiterations', max_iter);
+    mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess.trr ,guess.trnr ,...
+    guess.eh, guess.et, 'VERBOSE',false, 'maxiterations', max_iter);
 
 
 [hmmestimate.tr, hmmestimate.e] = ...
-    hmmtrain(seq_data.emissions, guess.tr, guess.tr, 'VERBOSE',false, 'maxiterations', max_iter);
+    hmmtrain(seq_data.emissions, guess.trr, guess.eh, 'VERBOSE',false, 'maxiterations', max_iter);
 
 end
