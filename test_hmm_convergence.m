@@ -4,22 +4,30 @@ function test_hmm_convergence()
 % The guess in this test is the same as the equence generation parametrres.
 
 
-res = [];
-steps = 5;
-for i=1:5
-    res=[res;getdistanceforsequence(10,1000,5)];
+tr_res = [];
+e_res = [];
+steps = 30;
+from = 10;
+to = 1000;
+for i=1:50
+    [trdistances,edistances] = getdistanceforsequence(from,to,steps);
+    tr_res=[tr_res;trdistances];
+    e_res = [e_res; edistances];
 end
 
-f=fit(linspace(10,1000,steps)',mean(res)','poly2');
-shadedErrorBar(linspace(1,1000,steps),res,{@mean,@std},'*b',3)
-hold on
-plot(f)
+
+figure();
+shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@std},'*b',3)
 xlabel('Sequnce length')
 ylabel('KL(E||T)')
-title('Baum Welch - Estimation accuracy vs. Sequence length')
-hold off
+title('Baum Welch - Transition matrices estimation accuracy')
 
-%test_max_iter();
+figure();
+shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@std},'*b',3)
+xlabel('Sequnce length')
+ylabel('KL(E||T)')
+title('Baum Welch - Emission matrices estimation accuracy')
+
 
 end
 
@@ -38,7 +46,7 @@ tr = [0.7 0.1 0.1 0.1;
 
 end
 
-function Ddistance = getdistanceforsequence(from, to, interval)
+function [Trdistance,Edistance] = getdistanceforsequence(from, to, interval)
 % checks the correlation between the sequence length and the error in the
 % estimated matrices. The longer the sequence the more correct should be the trained model.
 
@@ -46,15 +54,17 @@ function Ddistance = getdistanceforsequence(from, to, interval)
 tr_guess = getrandomdistribution(4,4);
 e_guess = getrandomdistribution(4,2);
 
-emissions = hmmgenerate(floor(1000), tr, e);
+emissions = hmmgenerate(to, tr, e);
 
-max_iterations = 1500;
-Ddistance = [];
+max_iter = 50;
+Trdistance = [];
+Edistance = [];
 lengths = linspace(from,to, interval);
 
 for seq_length=lengths
-    Ddistanceiter = run_hmm_train(emissions(1:floor(seq_length)), tr_guess, e_guess, max_iterations);
-    Ddistance = [Ddistance, Ddistanceiter(1)];
+    Ddistanceiter = run_hmm_train(emissions(1:floor(seq_length)), tr_guess, e_guess, max_iter);
+    Trdistance = [Trdistance, Ddistanceiter(1)];
+    Edistance = [Edistance, Ddistanceiter(2)];
 end
 end
 

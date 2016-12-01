@@ -8,31 +8,23 @@ e_res = [];
 steps = 30;
 from = 10;
 to = 1000;
-for i=1:10
+for i=1:50
     [trdistances,edistances] = getdistanceforsequence(from,to,steps);
     tr_res=[tr_res;trdistances];
     e_res = [e_res; edistances];
 end
 
 figure();
-f=fit(linspace(from,to,steps)',mean(tr_res)','poly2');
 shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@std},'*b',3)
-hold on
-plot(f)
 xlabel('Sequnce length')
 ylabel('KL(E||T)')
-title('Modified Baum Welch Transition Matrices Estimation Accuracy vs. Sequence length')
-hold off
+title('Modified Baum Welch - Transition matrices estimation accuracy')
 
 figure();
-f=fit(linspace(from,to,steps)',mean(e_res)','poly2');
 shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@std},'*b',3)
-hold on
-plot(f)
 xlabel('Sequnce length')
 ylabel('KL(E||T)')
-title('Modified Baum Welch - Emiision Matrices Estimation Accuracy vs. Sequence length')
-hold off
+title('Modified Baum Welch - Emission Matrices Estimation Accuracy')
 
 end
 
