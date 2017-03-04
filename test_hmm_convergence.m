@@ -6,10 +6,10 @@ function test_hmm_convergence()
 
 tr_res = [];
 e_res = [];
-steps = 30;
-from = 10;
+steps = 100;
+from = 30;
 to = 1000;
-for i=1:50
+for i=1:20
     [trdistances,edistances] = getdistanceforsequence(from,to,steps);
     tr_res=[tr_res;trdistances];
     e_res = [e_res; edistances];
@@ -18,13 +18,13 @@ end
 
 figure();
 shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@std},'*b',3)
-xlabel('Sequnce length')
+xlabel('Sequence length')
 ylabel('KL(E||T)')
 title('Baum Welch - Transition matrices estimation accuracy')
 
 figure();
 shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@std},'*b',3)
-xlabel('Sequnce length')
+xlabel('Sequence length')
 ylabel('KL(E||T)')
 title('Baum Welch - Emission matrices estimation accuracy')
 

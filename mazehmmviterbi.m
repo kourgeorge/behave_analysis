@@ -1,4 +1,4 @@
-function [currentState, logP] = mazehmmviterbi(seq,envtype, reward, tr_reward, tr_noreward,e_homo,e_hetro,varargin)
+function [currentState, logP] = mazehmmviterbi(seq, envtype, reward, tr_reward, tr_noreward,e_homo,e_hetro,varargin)
 %HMMVITERBI calculates the most probable state path for a sequence.
 %   STATES = HMMVITERBI(SEQ,TRANSITIONS,EMISSIONS) given a sequence, SEQ,
 %   calculates the most likely path through the Hidden Markov Model

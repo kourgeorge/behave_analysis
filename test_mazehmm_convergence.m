@@ -5,10 +5,10 @@ function test_mazehmm_convergence()
 
 tr_res = [];
 e_res = [];
-steps = 30;
-from = 10;
+steps = 100;
+from = 50;
 to = 1000;
-for i=1:50
+for i=1:2
     [trdistances,edistances] = getdistanceforsequence(from,to,steps);
     tr_res=[tr_res;trdistances];
     e_res = [e_res; edistances];
@@ -29,7 +29,7 @@ title('Modified Baum Welch - Emission Matrices Estimation Accuracy')
 end
 
 function [trR, trNR, eH, eT] = get_real_parameters()
-eps = 0.05;
+eps = 0.01;
 eH = [1-eps eps;
     eps 1-eps;
     1-eps eps;
