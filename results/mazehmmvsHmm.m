@@ -1,4 +1,4 @@
-function test_mazehmmvshmm()
+function mazehmmvsHmm()
 % generate a sequence of trials using mazehmmgenerate with two environment type but no rewarded states.
 % The estimated transition and emmits probabilities should be the same as the sequence generation parameters.
 % The guess in this test is the same as the equence generation parametrres.
