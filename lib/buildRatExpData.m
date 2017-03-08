@@ -1,4 +1,4 @@
-function res = buildRatExpData(csv_file_path)
+function res = buildRatExpData(csv_file_path, odorRelevant)
 %BUILD_EXP_DATA Summary of this function goes here
 %   The fields of the data files: trail	r	w	c	np	cup	ic_1	ic_2
 %      1.   trail (t)- the trial number
@@ -10,10 +10,12 @@ function res = buildRatExpData(csv_file_path)
 %      7.   ic_1 - is the arm which is associated with the irrelevant cue 1 
 %      8.   ic_2 - is the arm which is associated with the irrelevant cue 2
 
-% Here we assume that the relevant cue is the odor
+% In the output the first column represent the relevant cue and the second
+% column represent the irrilevant cue. 
 data = csvread(csv_file_path,1,0);
-res = [];
-for i=1:size(data,1)
+numTrials = size(data,1);
+res = zeros(numTrials, 4);
+for i=1:numTrials
     
     chosen_door = data(i,4);
     if (isnan(chosen_door) || chosen_door==0)
@@ -24,16 +26,16 @@ for i=1:size(data,1)
     is_chosen_door_correct = (chosen_door==correct_door);
     
     if (chosen_door==correct_door)
-        chosen_odor_cue = 1; %we want O1 to represent the correct cue.
+        chosen_relevant_cue = 1;
     else
-        chosen_odor_cue = 2;
+        chosen_relevant_cue = 2;
     end
     
-    door_of_light_cue1 = data(i,7); 
-    chosen_light_cue = 2 - (chosen_door == door_of_light_cue1);
+    door_of_irrelevant_cue1 = data(i,7); 
+    chosen_irrelevant_cue = 2 - (chosen_door == door_of_irrelevant_cue1);
     
-    res = [res; chosen_odor_cue, chosen_light_cue, is_chosen_door_correct];
+    res(i,:) = [chosen_relevant_cue, chosen_irrelevant_cue, chosen_door, is_chosen_door_correct];
         
-    end
+end
 end
 
