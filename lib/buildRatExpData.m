@@ -13,6 +13,7 @@ function res = buildRatExpData(csv_file_path, odorRelevant)
 % In the output the first column represent the relevant cue and the second
 % column represent the irrilevant cue. 
 data = csvread(csv_file_path,1,0);
+data(data(:,4)==0,:) = [];
 numTrials = size(data,1);
 res = zeros(numTrials, 4);
 for i=1:numTrials

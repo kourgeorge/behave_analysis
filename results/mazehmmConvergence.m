@@ -6,9 +6,9 @@ function test_mazehmm_convergence()
 tr_res = [];
 e_res = [];
 steps = 100;
-from = 50;
+from = 10;
 to = 1000;
-for i=1:2
+for i=1:20
     [trdistances,edistances] = getdistanceforsequence(from,to,steps);
     tr_res=[tr_res;trdistances];
     e_res = [e_res; edistances];
@@ -16,14 +16,16 @@ end
 
 figure();
 shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@std},'*b',3)
-xlabel('Sequnce length')
-ylabel('KL(E||T)')
+xlabel('Sequence length')
+%ylabel('KL(E||T)')
+ylabel('V(E,T)')
 title('Modified Baum Welch - Transition matrices estimation accuracy')
 
 figure();
 shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@std},'*b',3)
-xlabel('Sequnce length')
-ylabel('KL(E||T)')
+xlabel('Sequence length')
+%ylabel('KL(E||T)')
+ylabel('V(E,T)')
 title('Modified Baum Welch - Emission Matrices Estimation Accuracy')
 
 end
@@ -71,7 +73,7 @@ tr_guess = getrandomdistribution(4,4);
 e_guess = getrandomdistribution(4,2);
 
 
-max_iter = 50;
+max_iter = 500;
 Trdistance = [];
 Edistance = [];
 lengths = linspace(from,to, interval);
@@ -82,7 +84,8 @@ for seq_length=floor(lengths)
     seq_data.emissions = emissions(1:seq_length);
     seq_data.rewards = rewards(1:seq_length);
     
-    Ddistanceiter = run_hmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
+    %Ddistanceiter = run_hmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
+    Ddistanceiter = run_hmm_train(seq_data, realTRr, realTRnr, realEhomo, realEhetro, max_iter);
     Trdistance = [Trdistance, Ddistanceiter(1)];
     Edistance = [Edistance, Ddistanceiter(2)];
 end
@@ -127,10 +130,16 @@ function tot_error = run_hmm_train(seq_data, guess_trans_reward, guess_trans_nor
 
 [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = ...
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
-    guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', max_iterations);
+    guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', max_iterations);
 
-diff_trans = mean([sum(KLDiv(est_trans_reward ,realTRr)), sum(KLDiv(est_trans_noreward ,realTRnr))]);
-diff_emits = mean([sum(KLDiv(est_emits_homo, realEhomo)), sum(KLDiv(est_emits_hetro, realEhetro))]);
+
+%diff_trans = mean([sum(JSDiv(est_trans_reward ,realTRr)), sum(JSDiv(est_trans_noreward ,realTRnr))]);
+%diff_emits = mean([sum(JSDiv(est_emits_homo, realEhomo)), sum(JSDiv(est_emits_hetro, realEhetro))]);
+
+diff_trans = mean([sum(sum(abs(est_trans_reward - realTRr))), sum(sum(abs(est_trans_noreward - realTRnr)))]);
+diff_emits = mean([sum(sum(abs(est_emits_homo - realEhomo))), sum(sum(abs(est_emits_hetro - realEhetro)))]);
+
+
 tot_error = [diff_trans, diff_emits];
 
 end

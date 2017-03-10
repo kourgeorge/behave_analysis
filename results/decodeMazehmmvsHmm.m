@@ -6,7 +6,7 @@ function decodeMazehmmvsHmm()
 res_hmmprobs = [];
 res_mazehmmprobs = [];
 res_mazehmmprobsreal = [];
-for i=1:2
+for i=1:50
     [hmmprobs, mazehmmprobs, mazehmmprobsreal]=calcseqposteriorprobability(100,1000,5);
     res_hmmprobs = [res_hmmprobs; hmmprobs];
     res_mazehmmprobs = [res_mazehmmprobs; mazehmmprobs];
@@ -19,7 +19,9 @@ norm_hmmprobs = res_hmmprobs-res_mazehmmprobsreal;
 
 bar(floor(linspace(100,1000,5))', [mean(res_mazehmmprobsreal); mean(res_mazehmmprobs); mean(res_hmmprobs)]','LineWidth',1.5)
 legend('sca-hmm real','sca-hmm', 'hmm')
-
+xlabel('Training sequence length')
+ylabel('Log posterior probability of a probe sequence')
+title('Comparing decoding of BW and MBW with true and estimated parameters')
 end
 
 function [trR, trNR, eH, eT] = get_real_parameters()
@@ -56,7 +58,7 @@ function [hmmprobs, mazehmmprobs, mazehmmprobsreal] = calcseqposteriorprobabilit
 
 
 env_type_frac = 0.5;
-[envtype,emissions, states, rewards] = ...
+[envtype,emissions, ~, rewards] = ...
     mazehmmgenerate(1500, realTRr, realTRnr, ...
     realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
@@ -65,11 +67,12 @@ env_type_frac = 0.5;
     realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
 
-guess.tr = getrandomdistribution(4,4);
-guess.e = getrandomdistribution(4,2);
+guess.tr = createGuessProbabilityMatrices(realTRr, realTRnr, 0.5);
+guess.e = createGuessProbabilityMatrices(realEhomo, realEhetro, 0.5);
 
 
-max_iter = 1500;
+max_iter = 500;
+tolerance = 1e-2;
 mazehmmprobs = [];
 hmmprobs=[];
 mazehmmprobsreal=[];
@@ -81,7 +84,7 @@ for seq_length=floor(lengths)
     seq_data.emissions = emissions(1:seq_length);
     seq_data.rewards = rewards(1:seq_length);
     
-    [mazehmmestimate,hmmestimate] = run_train(seq_data, guess, max_iter);
+    [mazehmmestimate,hmmestimate] = run_train(seq_data, guess, max_iter, tolerance);
     
     postprobs = decode(mazehmmestimate,hmmestimate, testseq);
     
@@ -106,15 +109,15 @@ postprobs = [pSeqmazehmm, pSeqhmm, pSeqmazehmmReal];
 
 end
 
-function [mazehmmestimate,hmmestimate] = run_train(seq_data, guess, max_iter) 
+function [mazehmmestimate,hmmestimate] = run_train(seq_data, guess, max_iter, tolerance) 
 
 [mazehmmestimate.tr_reward, mazehmmestimate.tr_noreward, mazehmmestimate.e_homo, mazehmmestimate.e_hetro] = ...
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess.tr ,guess.tr ,...
-    guess.e, guess.e, 'VERBOSE',false, 'maxiterations', max_iter);
+    guess.e, guess.e, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
 
 
 [hmmestimate.tr, hmmestimate.e] = ...
-    hmmtrain(seq_data.emissions, guess.tr, guess.e, 'VERBOSE',false, 'maxiterations', max_iter);
+    hmmtrain(seq_data.emissions, guess.tr, guess.e, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
 
 end
 

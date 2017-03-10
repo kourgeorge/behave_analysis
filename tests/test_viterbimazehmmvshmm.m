@@ -2,7 +2,7 @@ function test_viterbimazehmmvshmm()
 res_hmmprobs = [];
 res_mazehmmprobs = [];
 res_mazehmmprobsreal = [];
-for i=1:5
+for i=1:50
     [hmmprobs, mazehmmprobs, mazehmmprobsreal]=calcseqposteriorprobability(100,1000,5);
     res_hmmprobs = [res_hmmprobs; hmmprobs];
     res_mazehmmprobs = [res_mazehmmprobs; mazehmmprobs];
@@ -13,16 +13,25 @@ norm_mazehmmprobs = res_mazehmmprobs./res_mazehmmprobsreal.*100;
 norm_hmmprobs = res_hmmprobs./res_mazehmmprobsreal.*100;
 
 
-bar(floor(linspace(100,1000,5))', [mean(norm_mazehmmprobs); mean(norm_hmmprobs)]','LineWidth',1.5)
-legend('MBW', 'BW')
+% bar(floor(linspace(100,1000,5))', [mean(norm_mazehmmprobs); mean(norm_hmmprobs); mean(res_mazehmmprobsreal*100)]', 'LineWidth',1.5)
+% errorb(linspace(100,1000,5), [mean(norm_mazehmmprobs); mean(norm_hmmprobs)]', [std(norm_mazehmmprobs); std(norm_hmmprobs)]', 'linewidth', 1, 'color', 'g')
+
+x = floor(linspace(100,1000,5));
+hold on;
+errorbar(x,mean(norm_hmmprobs),std(norm_hmmprobs), '--s','MarkerSize',7, 'MarkerFaceColor','green', 'linewidth', 2, 'color', 'green') 
+errorbar(x,mean(norm_mazehmmprobs),std(norm_mazehmmprobs), '--s','MarkerSize',7, 'MarkerFaceColor','blue', 'linewidth', 2, 'color', 'blue') 
+plot(x,mean(res_mazehmmprobsreal*100), '*c','MarkerSize',7)
+legend('BW', 'BW', 'MBW true')
+
 xlabel('Sequence length')
 ylabel('Normalized percentage of correct states estimation')
 title('The normalized percentage of correct states estimation using on a sequence of 200 trials')
+hold off;
 
 end
 
 function [trR, trNR, eH, eT] = get_real_parameters()
-eps = 0.05;
+eps = 0.01;
 eH = [1-eps eps;
     eps 1-eps;
     1-eps eps;
@@ -55,22 +64,21 @@ function [hmmprobs, mazehmmprobs, mazehmmprobsreal] = calcseqposteriorprobabilit
 
 
 env_type_frac = 0.5;
-[envtype,emissions, states, rewards] = ...
+[envtype, emissions, states, rewards] = ...
     mazehmmgenerate(1500, realTRr, realTRnr, ...
     realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
-[testseq.envtype,testseq.emissions, testseq.states, testseq.rewards] = ...
+[testseq.envtype, testseq.emissions, testseq.states, testseq.rewards] = ...
     mazehmmgenerate(200, realTRr, realTRnr, ...
     realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
 
-guess.trr = getrandomdistribution(4,4);
-guess.trnr = getrandomdistribution(4,4);
-guess.eh = getrandomdistribution(4,2);
-guess.et = getrandomdistribution(4,2);
+[guess.trr, guess.trnr] = createGuessProbabilityMatrices(realTRr, realTRnr, 0.5);
+[guess.eh, guess.et] = createGuessProbabilityMatrices(realEhomo, realEhetro, 0.5);
 
 
-max_iter = 1500;
+max_iter = 500;
+tolerance = 1e-2;
 mazehmmprobs = [];
 hmmprobs=[];
 mazehmmprobsreal=[];
@@ -82,7 +90,7 @@ for seq_length=floor(lengths)
     seq_data.emissions = emissions(1:seq_length);
     seq_data.rewards = rewards(1:seq_length);
     
-    [mazehmmestimate,hmmestimate] = train_models(seq_data, guess, max_iter);
+    [mazehmmestimate,hmmestimate] = train_models(seq_data, guess, max_iter, tolerance);
     
     [correctstates_mazehmm,correctstates_hmm ,correctstates_mazehmmreal] = statesHammingDistance(mazehmmestimate,hmmestimate, testseq);
     
@@ -111,14 +119,14 @@ correctstates_mazehmmreal = sum(estimatedstates_real==testseq.states)/200;
 
 end
 
-function [mazehmmestimate,hmmestimate] = train_models(seq_data, guess, max_iter) 
+function [mazehmmestimate,hmmestimate] = train_models(seq_data, guess, max_iter, tolerance) 
 
 [mazehmmestimate.tr_reward, mazehmmestimate.tr_noreward, mazehmmestimate.e_homo, mazehmmestimate.e_hetro] = ...
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess.trr ,guess.trnr ,...
-    guess.eh, guess.et, 'VERBOSE',false, 'maxiterations', max_iter);
+    guess.eh, guess.et, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
 
 
 [hmmestimate.tr, hmmestimate.e] = ...
-    hmmtrain(seq_data.emissions, guess.trr, guess.eh, 'VERBOSE',false, 'maxiterations', max_iter);
+    hmmtrain(seq_data.emissions, guess.trr + guess.trr, guess.eh + guess.et, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
 
 end

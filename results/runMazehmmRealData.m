@@ -54,7 +54,7 @@ guess_emit_hetro = [1-eps eps;
 % on real data
 %csv_file_path = 'C:\Users\gkour\Google Drive\PhD\Experimental data\BEHAVIOR\ODORS_2_odorsrelevantsecoindpair_palmarosa for reward_bohno connect with reward\RAT2_0102.csv';
 csv_file_path = 'C:\Users\gkour\Google Drive\PhD\Behavior Analysis\behavioral data_\odors(1)\007\007_odor1.csv';
-%csv_file_path = 'C:\Users\gkour\Google Drive\PhD\Behavior Analysis\behavioral data_\odors(1)\008\008_odor1.csv';
+csv_file_path = 'C:\Users\gkour\Google Drive\PhD\Behavior Analysis\behavioral data_\odors(1)\008\008_odor1.csv';
 selected_cues_reward = buildRatExpData(csv_file_path);
 num_trials = size (selected_cues_reward,1);
 
@@ -62,7 +62,7 @@ envtype = (selected_cues_reward(:,1)~=selected_cues_reward(:,2)) + 1; % if the s
 action = selected_cues_reward(:,1); % The selected action enum equal to the selected odor. 
 rewards = selected_cues_reward(:,4);
 
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = mazehmmtrain(action, envtype, rewards ,guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro,'VERBOSE', true, 'maxiterations', 1500);
+[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = mazehmmtrain(action', envtype', rewards', guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro,'VERBOSE', true, 'maxiterations', 1500);
 
 %test the viterbi if it makes sense with reasonable transition matrices.
 [currentState, logP] = mazehmmviterbi(action, envtype, rewards, guess_trans_reward, guess_trans_noreward,est_emits_homo, est_emits_hetro);

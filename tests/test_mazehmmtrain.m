@@ -15,18 +15,19 @@ tr = [0.6 0.25 0.05 0.05 0.05;
            0.2 0.2 0.2 0.2 0.2];
 
        
-test1(tr, e);
-%test2(tr, e);
-%test3(tr, e);
+%testSingleRewardedEnvHMMGenerate(tr, e);
+%testNoRewardedEnvMazeHMMGenerate(tr, e);
+%testNoRewardedEnvMazeHMMGenerate(tr, e);
 %test4();
 %compare_mazehmm_and_hmm_core_exp();
 %compare_mazehmm_and_hmm_random_noreward();
-%compare_mazehmm_and_hmm_random_reward();
+compare_mazehmm_and_hmm_random_reward();
 %compare_mazehmm_and_hmm_random_both();
+%testPerfectGuess()
 
 end
 
-function test1(tr, e)
+function testSingleRewardedEnvHMMGenerate(tr, e)
 % TEST 1 - create sequence of a single environemnt type (h) 
 % and reward and make sure the reduction of the
 % generalized implementation (mazehmmtrain) emits the same results as the original
@@ -51,7 +52,7 @@ end
 
 end
 
-function test2(tr, e)
+function testSingleRewardedEnvMazeHMMGenerate(tr, e)
 % TEST 2 - generate data using mazehmmgeneratedata. The data is only homo 
 % environment and no reward. Compare hmmtrain and mazehmmtrain. The
 % difference in the transition probabilitis and the emission probability
@@ -80,7 +81,7 @@ end
 
 end
 
-function test3(tr, e)
+function testNoRewardedEnvMazeHMMGenerate(tr, e)
 %TEST 3 - generate a sequence of trials using mazehmmgenerate with two environment type 
 % but no rewarded states. The estimated transition and 
 % emmits probabilities should be the same as the sequence generation parameters. 
@@ -111,7 +112,7 @@ end
  
 function test4()
 % make sure the emits matrices of the two configuration is converging to
-% the righ point, in non reward configuration.
+% the right point, in non reward configuration.
 
 eH = [0.1 0.9;
     0.9 0.1];
@@ -146,19 +147,19 @@ end
 end
 
 function compare_mazehmm_and_hmm_core_exp()
-%This is a well designed outputs to emulate a possible situation in hoch
+%This is a well designed outputs to emulate a possible situation in boch
 %the majority of the outputs are 2 but the emission matrix is [0 1; 1 0]
-%and [1 0; 0 1] and not [0 1; 0 1] whoch will the regular hmm will
+%and [1 0; 0 1] and not [0 1; 0 1] which will the regular hmm will
 %estimate.
 
 % so basically this experiment was designed to "confuse" hmm and smake sure
 % that the mazehmm is doing much better.
 
-% 1. Generate a seuquence of outputs so that vast majority of the output
+% 1. Generate a sequence of outputs so that vast majority of the output
 % are 2 but the proces generating those outputs is transitioning between
 % state q and state 2 with 
 % 2. Train hmm based on the observation sequnce
-% 3. Train mazeHmm on the onservations
+% 3. Train mazeHmm on the observations
 % 4. Check the difference in the probability matrices and the latent
 % states.
 
@@ -200,7 +201,7 @@ rewards = [rewards, zeros(1,10)];
 
 [est_trR_mazehmm, est_trNR_mazehmm, est_eHomo_mazehmm,est_eHetro_mazehmm,logliks_mazehmm] =...
     mazehmmtrain(seq, envtype , rewards ,guess_tr ,guess_tr, ...
-    guess_eH, guess_eT, 'VERBOSE', true, 'maxiterations', 500);
+    guess_eH, guess_eT, 'VERBOSE', true, 'maxiterations', 500, 'TOLERANCE',1e-6);
 
 
 diff_tr_hmm = dist_prob_matrices(trNR, trNR, est_tr_hmm, est_tr_hmm);
@@ -218,12 +219,11 @@ else
 end
 end
 
-
 function compare_mazehmm_and_hmm_random_noreward()
 
 % 1. Generate a sequence of outputs using hmmgenerate with no reward
-% 2. Train hmm based on the observation sequnce
-% 3. Train mazeHmm on the onservations
+% 2. Train hmm based on the observation sequence
+% 3. Train mazeHmm on the observations
 % 4. Check the difference in the probability matrices and the latent
 % states.
 
@@ -273,7 +273,7 @@ function compare_mazehmm_and_hmm_random_reward()
 
 % 1. Generate a sequence of outputs using hmmgenerate with reward
 % 2. Train hmm based on the observation sequence
-% 3. Train mazeHmm on the onservations
+% 3. Train mazeHmm on the observations
 % 4. Check the difference in the probability matrices and the latent states.
 
 
@@ -283,24 +283,23 @@ eH = [0.1 0.9;
 eT = [0.9 0.1;
     0.1 0.9]; 
          
-trR = [0.1 0.9 
-    0.9 0.1];
+trR = [0.9 0.1 
+    0.1 0.9];
 
-eps = 0.1;
-guess_eH = [.5 .5; .5 .5] + [-eps eps; eps -eps];
-guess_eT = [.5 .5; .5 .5] + [eps -eps; -eps eps];
-guess_tr = [0.5 0.5;0.5 0.5];
+[guess_eH,guess_eT] = createGuessProbabilityMatrices(eH, eT, 0.5);
+guess_tr = createGuessProbabilityMatrices(trR, trR, 0.5);
 
-num_trials = 100;
+num_trials = 1000;
+tolerance = 1e-4;
 [envtype,seq,states,rewards] = mazehmmgenerate(num_trials, trR, trR, eH, eT, 0.5, [1 1; 1 1] );
 
 
-[est_tr_hmm, est_e_hmm, logliks_hmm] = hmmtrain(seq, guess_tr, [.5 .5; .5 .5], 'maxiterations', 500, 'VERBOSE', true);
+[est_tr_hmm, est_e_hmm, logliks_hmm] = hmmtrain(seq, guess_tr, [.5, .5;.5 .5 ] , 'maxiterations', 500, 'VERBOSE', true, 'tolerance', tolerance);
 
 
 [est_trR_mazehmm, est_trNR_mazehmm, est_eHomo_mazehmm,est_eHetro_mazehmm,logliks_mazehmm] =...
-    mazehmmtrain(seq, envtype , rewards ,guess_tr ,guess_tr, ...
-    guess_eH, guess_eT, 'VERBOSE', true, 'maxiterations', 500);
+    mazehmmtrain(seq, envtype , rewards ,trR ,guess_tr, ...
+    [.5, .5;.5 .5 ], [.5, .5;.5 .5 ], 'VERBOSE', true, 'maxiterations', 500, 'tolerance', tolerance);
 
 
 diff_tr_hmm = dist_prob_matrices(trR, trR, est_tr_hmm, est_tr_hmm);
@@ -317,8 +316,6 @@ else
     disp('Fail')
 end
 end
-
-
 
 function compare_mazehmm_and_hmm_random_both()
 
@@ -374,6 +371,39 @@ else
 end
 end
 
+function testPerfectGuess()
+%the algorithm should converge on 1 or 2 iterations and the estimations
+%should be almost perfect.
+
+eH = [0.1 0.9;
+    0.9 0.1];
+
+eT = [0.9 0.1;
+    0.1 0.9]; 
+         
+trNR = [0.1 0.9 
+    0.9 0.1];
+
+trR = [0.9 0.1 
+    0.1 0.9];
+
+
+num_trials = 1000;
+[envtype, seq, ~, rewards] = mazehmmgenerate(num_trials, trR, trNR, eH, eT, 0.5, [1 0; 0 1] );
+
+[est_trR_mazehmm, est_trNR_mazehmm, est_eHomo_mazehmm,est_eHetro_mazehmm,logliks_mazehmm] =...
+    mazehmmtrain(seq, envtype , rewards ,trR ,trNR, ...
+    eH, eT, 'VERBOSE', true, 'maxiterations', 500, 'TOLERANCE',1e-2);
+
+diff_tr_mazehmm = dist_prob_matrices(trR, trNR, est_trR_mazehmm, est_trNR_mazehmm);
+
+if (diff_tr_mazehmm < 0.1)
+    disp('Pass')
+else
+    disp('Fail')
+end
+
+end
 
 %%%%%%%%%% Helper Functions %%%%%%%%%
 function dist = dist_prob_matrices(true1, true2, est1, est2)
