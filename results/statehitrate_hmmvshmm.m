@@ -17,15 +17,20 @@ norm_hmmprobs = res_hmmprobs./res_mazehmmprobsreal.*100;
 % errorb(linspace(100,1000,5), [mean(norm_mazehmmprobs); mean(norm_hmmprobs)]', [std(norm_mazehmmprobs); std(norm_hmmprobs)]', 'linewidth', 1, 'color', 'g')
 
 x = floor(linspace(100,1000,5));
+figure
 hold on;
-errorbar(x,mean(norm_hmmprobs),std(norm_hmmprobs), '--s','MarkerSize',7, 'MarkerFaceColor','green', 'linewidth', 2, 'color', 'green') 
-errorbar(x,mean(norm_mazehmmprobs),std(norm_mazehmmprobs), '--s','MarkerSize',7, 'MarkerFaceColor','blue', 'linewidth', 2, 'color', 'blue') 
-plot(x,mean(res_mazehmmprobsreal*100), '*c','MarkerSize',7)
-legend('BW', 'BW', 'MBW true')
+set(gca,'fontsize',22)
+errorbar(x,mean(norm_hmmprobs),std(norm_hmmprobs), '-s','MarkerSize', 7, 'linewidth', 2, 'CapSize', 16) 
+errorbar(x,mean(norm_mazehmmprobs),std(norm_mazehmmprobs), '-s','MarkerSize', 7, 'linewidth', 2,'CapSize', 16) 
+xlim([5,1050])
+ylim([0,100])
+legend('BW', 'MBW')
+legend('BW', 'MBW', 'MBW true')
+ylim([20,100])
 
-xlabel('Sequence length')
-ylabel('Normalized percentage of correct states estimation')
-title('The normalized percentage of correct states estimation using on a sequence of 200 trials')
+xlabel('Sequence length', 'fontsize', 22)
+ylabel('Normalized hit-rate [%]', 'fontsize', 22)
+title('Hidden state hit-rate', 'fontsize', 22)
 hold off;
 
 end

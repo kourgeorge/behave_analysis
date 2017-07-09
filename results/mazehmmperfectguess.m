@@ -15,31 +15,37 @@ for i=1:repeats
     
 end
 
-figure();
+figure;
+set(gca,'fontsize',22)
 bar(linspace(from,to,steps), mean(tr_res))
 hold on;
-errorb(linspace(from,to,steps), mean(tr_res),std(tr_res), 'linewidth', 1, 'color', 'g')
+errorb(linspace(from,to,steps), mean(tr_res),std(tr_res), 'linewidth', 1)
 xlabel('Noise Factor')
 %ylabel('KL(E||T)')
 ylabel('V(E,T)')
-title('Modified Baum Welch - Transition matrices estimation accuracy')
+title('Estimated transition probilities accuracy')
+hold off;
 
-figure();
+figure;
+set(gca,'fontsize',22)
 bar(linspace(from,to,steps), mean(e_res))
 hold on;
-errorb(linspace(from,to,steps), mean(e_res),std(e_res), 'linewidth', 1, 'color', 'g')
+errorb(linspace(from,to,steps), mean(e_res),std(e_res), 'linewidth', 1)
 xlabel('Noise Factor')
 ylabel('V(E,T)')
-title('Modified Baum Welch - Emission Matrices Estimation Accuracy')
+title('Estimation Emission matrices accuracy')
+hold off;
 
 
-figure();
+figure;
+set(gca,'fontsize',22)
 bar(linspace(from,to,steps), mean(iterations_res))
 hold on;
-errorb(linspace(from,to,steps), mean(iterations_res),std(iterations_res), 'linewidth', 1, 'color', 'g')
+errorb(linspace(from,to,steps), mean(iterations_res),std(iterations_res), 'linewidth', 1)
 xlabel('Noise Factor')
 ylabel('Number of iterations')
-title('Modified Baum Welch - Number of iteration needed for convergence')
+title('Iteration needed for convergence')
+hold off
 
 end
 
@@ -85,7 +91,7 @@ tolerance = 1e-4;
 Trdistance = [];
 Edistance = [];
 numIterations = [];
-noiseVec = linspace(noiseFrom,noiseTo, interval);
+noiseVec = linspace(noiseFrom, noiseTo, interval);
 
 for noise=noiseVec
     
@@ -110,10 +116,6 @@ function tot_error = run_hmm_train(seq_data, guess_trans_reward, guess_trans_nor
 [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro, logliks] = ...
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
     guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', max_iterations, 'TOLERANCE', tolerance);
-
-
-%diff_trans = mean([sum(JSDiv(est_trans_reward ,realTRr)), sum(JSDiv(est_trans_noreward ,realTRnr))]);
-%diff_emits = mean([sum(JSDiv(est_emits_homo, realEhomo)), sum(JSDiv(est_emits_hetro, realEhetro))]);
 
 diff_trans = mean([sum(sum(abs(est_trans_reward - realTRr))), sum(sum(abs(est_trans_noreward - realTRnr)))]);
 diff_emits = mean([sum(sum(abs(est_emits_homo - realEhomo))), sum(sum(abs(est_emits_hetro - realEhetro)))]);

@@ -14,7 +14,8 @@ for i=1:20
     e_res = [e_res; edistances];
 end
 
-figure();
+figure;
+set(gca,'fontsize',22)
 shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@std},'*b',3)
 xlabel('Sequence length')
 %ylabel('KL(E||T)')
@@ -22,6 +23,7 @@ ylabel('V(E,T)')
 title('Modified Baum Welch - Transition matrices estimation accuracy')
 
 figure();
+set(gca,'fontsize',22)
 shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@std},'*b',3)
 xlabel('Sequence length')
 %ylabel('KL(E||T)')

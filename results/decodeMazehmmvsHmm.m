@@ -16,12 +16,15 @@ end
 norm_mazehmmprobs = res_mazehmmprobs-res_mazehmmprobsreal;
 norm_hmmprobs = res_hmmprobs-res_mazehmmprobsreal;
 
-
+figure
+set(gca,'fontsize',22)
 bar(floor(linspace(100,1000,5))', [mean(res_mazehmmprobsreal); mean(res_mazehmmprobs); mean(res_hmmprobs)]','LineWidth',1.5)
-legend('sca-hmm real','sca-hmm', 'hmm')
-xlabel('Training sequence length')
-ylabel('Log posterior probability of a probe sequence')
-title('Comparing decoding of BW and MBW with true and estimated parameters')
+legend('SCA-HMM true','SCA-HMM estimated', 'HMM estimated')
+xlabel('Sequence length')
+ylabel('Posterior log probability')
+title('Comparing the posterior probability of SCA-HMM and HMM')
+ylim([-220, 0])
+
 end
 
 function [trR, trNR, eH, eT] = get_real_parameters()
