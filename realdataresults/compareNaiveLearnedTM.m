@@ -1,6 +1,8 @@
 function compareNaiveLearnedTM()
-%COMPARENAIVELEARNEDTM Summary of this function goes here
-%   Detailed explanation goes here
+%COMPARENAIVELEARNEDTM Calculate the transition matrices of both trained
+%and naive rats for both rewarded and unrewarded trials. 
+%The transition matrices are calculated based on the SCA-HMM model. 
+%The average transition probability is shown for the several rats.  
 
 folder = 'C:\Users\gkour\Google Drive\PhD\Behavior Analysis\behavioral data\data\exp1';
 rats = {'003','004','019','027','030','031','032'};
@@ -17,7 +19,6 @@ for rat=rats
    [Nest_trans_reward, Nest_trans_noreward, ~, ~] = estimateModelParameters( behave_data );
    behave_data = loadRatExpData(learned_file);
    [Lest_trans_reward, Lest_trans_noreward, ~, ~] = estimateModelParameters( behave_data );
-   Lest_trans_noreward
    TNest_trans_reward = TNest_trans_reward + Nest_trans_reward;
    TLest_trans_reward = TLest_trans_reward + Lest_trans_reward;
    TNest_trans_noreward = TNest_trans_noreward+Nest_trans_noreward;
