@@ -6,17 +6,17 @@ function [] = modelActionPrediction()
 %include in the model several traisitions matrices that changes due to the 
 % training of the rat).
 
-%?Given a rat with N trails, perform the following for K=20:5:80
+%Given a rat with N trails, perform the following for K=20:5:80
 %Choose a sub-sequence of length K, and train the model.
 %Based on the trained model estimate the next action of the rat given also the state in the last trial of the training sequence (calculated using the viterbi algorithm), the current environment type, and whether a reward was given in the last trial.
 %Perform 100 repetitions.
 
 folder = 'C:\Users\gkour\Google Drive\PhD\Behavior Analysis\behavioral data\data\exp1';
-rats = {'003','004','019','027','030', '031','032'};
+rats = {'004','019','027','030', '031','032'};
 
 sequence_length_acc_trained = [];
 sequence_length_acc_naive = [];
-seq_lengthes = 20:5:80;
+seq_lengthes = 15:5:35;
 
 %for each rat
 for i=1:length(rats)
@@ -48,20 +48,17 @@ suptitle('Next step prediction accuracy vs. training sequence length.')
 
 end
 
-
 function plotresult(sub, seq_lengthes, data)
 
 subplot(2,4,sub)
 plot(seq_lengthes, data, 'o-')
 %hold on;
 %errorbar(seq_lengthes, accuracy_per_tained_rat, std_per_rat)
-ylim([0.2,1])
-xlim ([10,90])
+ylim([0,1])
+xlim ([10,40])
 legend('naive', 'trained')
 
-end
-    
-    
+end    
 
 function [mean, var] = runExperimentOnRat(seq_lengthes, behave_data)
 mean = [];
@@ -90,10 +87,17 @@ function [accuracy_mean,accuracy_std] = calculateModelAccuracyOnData(behave_data
 num_samples = length(behave_data);
 
 accurate_iteration = [];
-reprtitions = 100;
+reprtitions = 50;
 for i=1:reprtitions
     start_train_ind = randi(num_samples-train_sequence_length-1,1);
     end_train_ind = start_train_ind + train_sequence_length;    
+    reward_on_next_step = behave_data(end_train_ind+1,4);
+    %check if the rat made an error in trial t+K+1
+    %while (reward_on_next_step==true)
+    %    start_train_ind = randi(num_samples-train_sequence_length-1,1);
+    %    end_train_ind = start_train_ind + train_sequence_length;
+    %    reward_on_next_step = behave_data(end_train_ind+1,4);
+    %end
     accurate_iteration = [accurate_iteration, getModelAccuracy(behave_data, start_train_ind, end_train_ind)];
 end
 
@@ -110,11 +114,7 @@ next_envtype = behave_test(1,5);
 next_action_prediction = predictNextAction (behave_train, next_envtype);
 actual_next_action = behave_test(1,6);
 
-correct = false;
-if (actual_next_action == next_action_prediction)
-    correct = true;
-end
-
+correct = actual_next_action == next_action_prediction;
 end
 
 function next_action_prediction = predictNextAction (behave_train, next_envtype)
@@ -122,12 +122,11 @@ function next_action_prediction = predictNextAction (behave_train, next_envtype)
 %calculates the model parameters and runs viterbi to estimate the last
 %state to return a prediction for the next action.
 
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = estimateModelParameters( behave_train);
-estimated_parameters.est_trans_reward = est_trans_reward;
-estimated_parameters.est_trans_noreward = est_trans_noreward;
-estimated_parameters.est_emits_homo = est_emits_homo;
-estimated_parameters.est_emits_hetro = est_emits_hetro;
-
+[estimated_parameters.est_trans_reward, ...
+    estimated_parameters.est_trans_noreward, ...
+    estimated_parameters.est_emits_homo, ...
+    estimated_parameters.est_emits_hetro] = estimateModelParameters( behave_train );
+ 
 
 %PredictNextAction()
 observation_sequece = behave_train(:,6);

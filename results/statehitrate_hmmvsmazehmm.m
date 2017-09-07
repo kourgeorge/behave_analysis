@@ -1,4 +1,4 @@
-function test_viterbimazehmmvshmm()
+function statehitrate_hmmvshmm()
 res_hmmprobs = [];
 res_mazehmmprobs = [];
 res_mazehmmprobsreal = [];

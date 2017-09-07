@@ -5,7 +5,7 @@ function [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro]
 
 if (nargin<2)
     eps = 0.00;
-    [ guess_trans_noreward,  guess_trans_reward, guess_emit_homo, guess_emit_hetro] = getModelParametersGuess( eps, true);
+    [ guess_trans_noreward,  guess_trans_reward, guess_emit_homo, guess_emit_hetro] = getModelParameters( eps, 'uniform');
 else
     guesses = varargin{1};
     guess_trans_noreward = guesses.guess_trans_noreward;
@@ -21,7 +21,7 @@ envtype = (chosen_relevant_cue~=chosen_irrelevant_cue) + 1; % if the selected do
 action = chosen_relevant_cue; % The selected action enum equal to the selected odor. 
 rewards = behave_data(:,4);
 
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = mazehmmtrain(action', envtype', rewards', guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro,'VERBOSE', false, 'maxiterations', 500, 'TOLERANCE',0.01);
+[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = mazehmmtrain(action', envtype', rewards', guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro,'VERBOSE', false, 'maxiterations', 1000, 'TOLERANCE',0.00001);
  
 end
 
