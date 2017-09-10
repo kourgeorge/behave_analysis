@@ -1,137 +1,106 @@
-function statehitrate_hmmvshmm()
-res_hmmprobs = [];
-res_mazehmmprobs = [];
-res_mazehmmprobsreal = [];
-for i=1:50
-    [hmmprobs, mazehmmprobs, mazehmmprobsreal]=calcseqposteriorprobability(100,1000,5);
-    res_hmmprobs = [res_hmmprobs; hmmprobs];
-    res_mazehmmprobs = [res_mazehmmprobs; mazehmmprobs];
-    res_mazehmmprobsreal=[res_mazehmmprobsreal;mazehmmprobsreal];
+function statehitrate_hmmvsmazehmm()
+hitrates = [];
+training_seq_lengths = floor(linspace(40,500,50));
+theta_type = 'gt2';
+labels = {'BW estimated theta', 'MBW estimated theta', 'MBW GT theta'};
+theta_gt = getModelParameters(0.01, theta_type);
+repetitions = 50;
+
+for seq_length=floor(training_seq_lengths)
+        hitrates = cat (3, hitrates, calcHitrate(seq_length, repetitions, theta_gt));
+end
+hitrates = permute(hitrates, [1 3 2]);
+show_graph(training_seq_lengths, hitrates, labels, theta_type);
 end
 
-norm_mazehmmprobs = res_mazehmmprobs./res_mazehmmprobsreal.*100;
-norm_hmmprobs = res_hmmprobs./res_mazehmmprobsreal.*100;
+function show_graph(x, hitrates, labels ,theta_type)
 
+% hitrates: dim 1 - repetitions
+%           dim 2 - sequence length
+%           dim 3 - type - hmm, mazehmm, mazehmm_gt
 
-% bar(floor(linspace(100,1000,5))', [mean(norm_mazehmmprobs); mean(norm_hmmprobs); mean(res_mazehmmprobsreal*100)]', 'LineWidth',1.5)
-% errorb(linspace(100,1000,5), [mean(norm_mazehmmprobs); mean(norm_hmmprobs)]', [std(norm_mazehmmprobs); std(norm_hmmprobs)]', 'linewidth', 1, 'color', 'g')
-
-x = floor(linspace(100,1000,5));
-figure
+figure;
 hold on;
 set(gca,'fontsize',22)
-errorbar(x,mean(norm_hmmprobs),std(norm_hmmprobs), '-s','MarkerSize', 7, 'linewidth', 2, 'CapSize', 16) 
-errorbar(x,mean(norm_mazehmmprobs),std(norm_mazehmmprobs), '-s','MarkerSize', 7, 'linewidth', 2,'CapSize', 16) 
-xlim([5,1050])
-ylim([0,100])
-legend('BW', 'MBW')
-legend('BW', 'MBW', 'MBW true')
-ylim([20,100])
+for i=1:size(hitrates,3)
+    errorbar(x,mean(hitrates(:,:,i)),var(hitrates(:,:,i)), '-s','MarkerSize', 7, 'linewidth', 2, 'CapSize', 16) 
+end
 
-xlabel('Sequence length', 'fontsize', 22)
-ylabel('Normalized hit-rate [%]', 'fontsize', 22)
-title('Hidden state hit-rate', 'fontsize', 22)
+xlim([x(1)-10,x(end)+10])
+ylim([0.5,0.9])
+legend(labels)
+xlabel('Sequence length')
+ylabel('Hit-rate')
+title(['Hidden state hit-rate - ',theta_type])
+
 hold off;
 
 end
 
-function [trR, trNR, eH, eT] = get_real_parameters()
-eps = 0.01;
-eH = [1-eps eps;
-    eps 1-eps;
-    1-eps eps;
-    eps 1-eps];
+function [trainseq, testseq] = createTrainAndTestSequences(train_len, test_len, theta_gt, env_type_frac, R)
+    
+    [trainseq.envtype, trainseq.emissions, trainseq.states, trainseq.rewards] = ...
+        mazehmmgenerate(train_len, theta_gt.trR, theta_gt.trNR, ...
+        theta_gt.eH, theta_gt.eT ,env_type_frac, R);
 
-eT = [1-eps eps; %o1l2 o2l1
-    eps 1-eps;
-    eps 1-eps;
-    1-eps eps];
-
-
-trR = [0.7 0.1 0.1 0.1;
-    0.1 0.7 0.1 0.1;
-    0.1 0.1 0.7 0.1;
-    0.7 0.1 0.1 0.7];
-
-
-trNR = [0.1 0.3 0.3 0.3;
-    0.3 0.1 0.3 0.3;
-    0.3 0.3 0.1 0.3;
-    0.3 0.3 0.3 0.1];
-
+    [testseq.envtype, testseq.emissions, testseq.states, testseq.rewards] = ...
+        mazehmmgenerate(test_len, theta_gt.trR, theta_gt.trNR, ...
+        theta_gt.eH, theta_gt.eT ,env_type_frac, R);
+    
 end
 
-function [hmmprobs, mazehmmprobs, mazehmmprobsreal] = calcseqposteriorprobability(from, to, interval)
+
+function hitrates = calcHitrate(seq_length, repetitions, theta_gt)
 % checks the correlation between the sequence length and the error in the
 % estimated matrices. The longer the sequence the more correct should be the trained model.
 
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
-
-
-env_type_frac = 0.5;
-[envtype, emissions, states, rewards] = ...
-    mazehmmgenerate(1500, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
-
-[testseq.envtype, testseq.emissions, testseq.states, testseq.rewards] = ...
-    mazehmmgenerate(200, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
-
-
-[guess.trr, guess.trnr] = createGuessProbabilityMatrices(realTRr, realTRnr, 0.5);
-[guess.eh, guess.et] = createGuessProbabilityMatrices(realEhomo, realEhetro, 0.5);
-
+theta_guess = getModelParameters( 0.01 , 'uniform' );
 
 max_iter = 500;
 tolerance = 1e-2;
-mazehmmprobs = [];
-hmmprobs=[];
-mazehmmprobsreal=[];
-lengths = linspace(from,to, interval);
+hitrates = [];
 
-for seq_length=floor(lengths)
-    
-    seq_data.envtype = envtype(1:seq_length);
-    seq_data.emissions = emissions(1:seq_length);
-    seq_data.rewards = rewards(1:seq_length);
-    
-    [mazehmmestimate,hmmestimate] = train_models(seq_data, guess, max_iter, tolerance);
-    
-    [correctstates_mazehmm,correctstates_hmm ,correctstates_mazehmmreal] = statesHammingDistance(mazehmmestimate,hmmestimate, testseq);
-    
-    mazehmmprobs = [mazehmmprobs, correctstates_mazehmm];
-    hmmprobs = [hmmprobs, correctstates_hmm];
-    mazehmmprobsreal= [mazehmmprobsreal, correctstates_mazehmmreal];
-    
+for i=1:repetitions
+[trainseq, testseq] = createTrainAndTestSequences(seq_length, 200, theta_gt, 0.5, [1 0; 1 0]);
+%HMM%
+%Train
+[theta_hmm.tr, theta_hmm.e] = ...
+    hmmtrain(trainseq.emissions, theta_guess.trR + theta_guess.trNR, theta_guess.eH + theta_guess.eT, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
+%Estimate
+estimatedstates_hmm = hmmviterbi(testseq.emissions,theta_hmm.tr,theta_hmm.e);
+
+%MazeHMM%
+%Train
+[theta_mazehmm.trR, theta_mazehmm.trNR, theta_mazehmm.eH, theta_mazehmm.eT] = ...
+    mazehmmtrain(trainseq.emissions, trainseq.envtype , trainseq.rewards ,theta_guess.trR ,theta_guess.trNR ,...
+    theta_guess.eH, theta_guess.eT, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
+%Estimate
+try
+    estimatedstates_mazehmm = mazehmmviterbi(testseq.emissions,testseq.envtype,testseq.rewards,...
+        theta_mazehmm.trR,theta_mazehmm.trNR,theta_mazehmm.eH,theta_mazehmm.eT);
+catch exp
+    estimatedstates_mazehmm = zeros(1,length(testseq.emissions));
+    warning(exp.message);
+end
+
+%test = mazehmmviterbi(trainseq.emissions,trainseq.envtype,trainseq.rewards,...
+%    theta_mazehmm.trR,theta_mazehmm.trNR,theta_mazehmm.eH,theta_mazehmm.eT);
+
+%mazeHM using GT
+%Estimate
+estimatedstates_real =mazehmmviterbi(testseq.emissions, testseq.envtype, testseq.rewards,...
+    theta_gt.trR, theta_gt.trNR, theta_gt.eH, theta_gt.eT);
+
+mazehmm_hitrate = calcCorrectStateRate(estimatedstates_mazehmm, testseq.states);
+hmm_hitrate = calcCorrectStateRate(estimatedstates_hmm, testseq.states);
+mazehmm_gt_hitrate= calcCorrectStateRate(estimatedstates_real, testseq.states);
+
+hitrates = [hitrates; hmm_hitrate, mazehmm_hitrate, mazehmm_gt_hitrate];
+
 end
 end
 
-function [correctstates_mazehmm,correctstates_hmm ,correctstates_mazehmmreal] = statesHammingDistance(mazehmmestimate,hmmestimate,testseq)
-
-estimatedstates_mazehmm = mazehmmviterbi(testseq.emissions,testseq.envtype,testseq.rewards,...
-    mazehmmestimate.tr_reward,mazehmmestimate.tr_noreward,mazehmmestimate.e_homo,mazehmmestimate.e_hetro);
-
-estimatedstates_hmm = hmmviterbi(testseq.emissions,hmmestimate.tr,hmmestimate.e);
-
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
-estimatedstates_real=mazehmmviterbi(testseq.emissions,testseq.envtype,testseq.rewards,...
-    realTRr,realTRnr,realEhomo,realEhetro);
-
-correctstates_mazehmm = sum(estimatedstates_mazehmm==testseq.states)/200;
-correctstates_hmm = sum(estimatedstates_hmm==testseq.states)/200;
-correctstates_mazehmmreal = sum(estimatedstates_real==testseq.states)/200;
-
-
+function corract_state_rate = calcCorrectStateRate(estimated_states, true_states)
+corract_state_rate = sum(estimated_states==true_states)/length(true_states);
 end
 
-function [mazehmmestimate,hmmestimate] = train_models(seq_data, guess, max_iter, tolerance) 
-
-[mazehmmestimate.tr_reward, mazehmmestimate.tr_noreward, mazehmmestimate.e_homo, mazehmmestimate.e_hetro] = ...
-    mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess.trr ,guess.trnr ,...
-    guess.eh, guess.et, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
-
-
-[hmmestimate.tr, hmmestimate.e] = ...
-    hmmtrain(seq_data.emissions, guess.trr + guess.trr, guess.eh + guess.et, 'VERBOSE',false, 'maxiterations', max_iter, 'tolerance', tolerance);
-
-end
