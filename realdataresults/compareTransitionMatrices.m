@@ -13,13 +13,13 @@ files = dir([folder_path,'/*.csv']);
 for file = files'
     file_path = fullfile(file.folder,file.name);
     behave_data = loadRatExpData(file_path);
-    [est_trans_reward, est_trans_noreward, ~, ~] = estimateModelParameters( behave_data );
+    theta = estimateModelParameters( behave_data );
 
     if (learning_score(behave_data)> 0.7)
-        est_trans_reward_avg_learned = est_trans_reward_avg_learned + est_trans_reward;
+        est_trans_reward_avg_learned = est_trans_reward_avg_learned + theta.trR;
         num_learned = num_learned+1;
     else
-        est_trans_reward_avg_naive = est_trans_reward_avg_naive + est_trans_reward;
+        est_trans_reward_avg_naive = est_trans_reward_avg_naive + theta.trR;
         num_naive = num_naive+1;
     end
     

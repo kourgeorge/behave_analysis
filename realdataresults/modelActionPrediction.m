@@ -76,8 +76,7 @@ for train_sequence_length = seq_lengthes
     var = [var, accuracy_var];
 end
 
-
-end
+nd
 
 function [accuracy_mean,accuracy_std] = calculateModelAccuracyOnData(behave_data, train_sequence_length)
 %Given the entire set of training data and a training length, this function
@@ -122,10 +121,7 @@ function next_action_prediction = predictNextAction (behave_train, next_envtype)
 %calculates the model parameters and runs viterbi to estimate the last
 %state to return a prediction for the next action.
 
-[estimated_parameters.est_trans_reward, ...
-    estimated_parameters.est_trans_noreward, ...
-    estimated_parameters.est_emits_homo, ...
-    estimated_parameters.est_emits_hetro] = estimateModelParameters( behave_train );
+theta = estimateModelParameters( behave_train );
  
 
 %PredictNextAction()
@@ -134,31 +130,30 @@ envtype = behave_train(:,5);
 reward = behave_train(:,4);
 
 estimatedstates_hmm = mazehmmviterbi(observation_sequece,envtype,reward,...
-    estimated_parameters.est_trans_reward,estimated_parameters.est_trans_noreward,...
-    estimated_parameters.est_emits_homo, estimated_parameters.est_emits_hetro);
+    theta.trR, theta.trNR, theta.eH, theta.eT);
 
 last_state = estimatedstates_hmm(end);
 
 last_reward = behave_train(end,4);
-next_action_prediction = predictNextActionByModelParameters(estimated_parameters, last_state, next_envtype, last_reward);
+next_action_prediction = predictNextActionByModelParameters(theta, last_state, next_envtype, last_reward);
 
 
 end
 
-function next_action = predictNextActionByModelParameters(estimated_parameters, last_state, next_envtype, last_reward)
+function next_action = predictNextActionByModelParameters(theta, last_state, next_envtype, last_reward)
 %gets the model parameters environment type and last reward and returns the
 %next action.
 
 if (last_reward)
-    transition = estimated_parameters.est_trans_reward;
+    transition = theta.trR;
 else
-    transition = estimated_parameters.est_trans_noreward;
+    transition = theta.trNR;
 end
 
-if (next_envtype)
-    emission = estimated_parameters.est_emits_homo;
+if (next_envtype==1)
+    emission = theta.eH;
 else
-    emission = estimated_parameters.est_emits_hetro;
+    emission = theta.eT;
 end
 
 [~,next_state] = max(transition(last_state,:));

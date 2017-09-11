@@ -23,9 +23,8 @@ function modelActionPrediction()
 
 sequence_length_acc = [];
 scrambled_sequence_length_acc = [];
-seq_lengthes = 50:200:1200;
-num_sequences = 2;
-for i=1:num_sequences
+seq_lengthes = 50:50:500;
+for i=1:seq_lengthes
     
     %create a synthetic data using the sca-hmm data generator
     [envtype,seq,states,rewards] = generate_synthetic_sequence(1500);
@@ -76,7 +75,7 @@ function [accuracy_mean,accuracy_std] = calculateModelAccuracyOnData(behave_data
 num_samples = length(behave_data);
 
 accurate_iteration = [];
-reprtitions = 5;
+reprtitions = 50;
 for i=1:reprtitions
     start_train_ind = randi(num_samples-model_parameters-1,1);
     end_train_ind = start_train_ind + model_parameters;
@@ -136,8 +135,8 @@ end
 
 function [envtype,seq,states,rewards] = generate_synthetic_sequence(num_trials)
 
-[ trNR,  trR, eH, eT] = getModelParameters( 0.01 , 'uniform' );
-[envtype,seq,states,rewards] = mazehmmgenerate(num_trials, trR, trNR, eH, eT, 0.5, [1 0; 1 0] );
+theta = getModelParameters( 0.01 , 'gt2' );
+[envtype,seq,states,rewards] = mazehmmgenerate(num_trials, theta.trR, theta.trNR, theta.eH, theta.eT, 0.5, [1 0; 1 0] );
 
 end
 

@@ -1,4 +1,4 @@
-function [ output_args ] = visualizeSelections( envtypes, actions, rewards,estimsted_states )
+function visualizeSelections( envtypes, actions, rewards,estimsted_states )
 %VISUALIZESELECTIONS Summary of this function goes here
 %   Detailed explanation goes here
 

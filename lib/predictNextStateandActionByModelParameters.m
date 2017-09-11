@@ -1,17 +1,17 @@
-function [next_state, next_action] = predictNextStateandActionByModelParameters(estimated_parameters, last_state, next_envtype, last_reward)
+function [next_state, next_action] = predictNextStateandActionByModelParameters(theta, last_state, next_envtype, last_reward)
 %gets the model parameters environment type and last reward and returns the
 %next action.
 
-if (last_reward)
-    transition = estimated_parameters.est_trans_reward;
+if (last_reward==1)
+    transition = theta.trR;
 else
-    transition = estimated_parameters.est_trans_noreward;
+    transition = theta.trNR;
 end
 
-if (next_envtype)
-    emission = estimated_parameters.est_emits_homo;
+if (next_envtype==1)
+    emission = theta.eH;
 else
-    emission = estimated_parameters.est_emits_hetro;
+    emission = theta.eT;
 end
 
 [~,next_state] = max(transition(last_state,:));

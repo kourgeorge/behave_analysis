@@ -16,13 +16,13 @@ for rat=rats
    naive_file = fullfile(folder,[rat{1},'N','.txt']); 
    learned_file = fullfile(folder,[rat{1},'.txt']);
    behave_data = loadRatExpData(naive_file);
-   [Nest_trans_reward, Nest_trans_noreward, ~, ~] = estimateModelParameters( behave_data );
+   theta_naive = estimateModelParameters( behave_data );
    behave_data = loadRatExpData(learned_file);
-   [Lest_trans_reward, Lest_trans_noreward, ~, ~] = estimateModelParameters( behave_data );
-   TNest_trans_reward = TNest_trans_reward + Nest_trans_reward;
-   TLest_trans_reward = TLest_trans_reward + Lest_trans_reward;
-   TNest_trans_noreward = TNest_trans_noreward+Nest_trans_noreward;
-   TLest_trans_noreward = TLest_trans_noreward +Lest_trans_noreward;
+   theta_trained= estimateModelParameters( behave_data );
+   TNest_trans_reward = TNest_trans_reward + theta_naive.trR;
+   TLest_trans_reward = TLest_trans_reward + theta_trained.trR;
+   TNest_trans_noreward = TNest_trans_noreward + theta_naive.trNR;
+   TLest_trans_noreward = TLest_trans_noreward +theta_trained.trNR;
    
 end
 

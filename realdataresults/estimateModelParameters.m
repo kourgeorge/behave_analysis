@@ -1,17 +1,18 @@
-function [est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = estimateModelParameters( behave_data, varargin )
+function theta = estimateModelParameters( behave_data, varargin )
 %ESTIMATEMODELPARAMETERS 
 %Input: a csv contain the behavioral data of the rat. 
 %Output: the SCA-HMM model parameters.
 
+
+max_iterations = 500;
+tolerance = 1e-4; 
+
 if (nargin<2)
     eps = 0.00;
-    [ guess_trans_noreward,  guess_trans_reward, guess_emit_homo, guess_emit_hetro] = getModelParameters( eps, 'uniform');
+    theta_guess = getModelParameters( eps, 'uniform');
 else
     guesses = varargin{1};
-    guess_trans_noreward = guesses.guess_trans_noreward;
-    guess_trans_reward = guesses.guess_trans_reward;
-    guess_emit_homo = guesses.guess_emit_homo;
-    guess_emit_hetro = guesses.guess_emit_hetro;
+    theta_guess =  guesses;
 end
 
 chosen_relevant_cue = behave_data(:,1);
@@ -21,7 +22,7 @@ envtype = (chosen_relevant_cue~=chosen_irrelevant_cue) + 1; % if the selected do
 action = chosen_relevant_cue; % The selected action enum equal to the selected odor. 
 rewards = behave_data(:,4);
 
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = mazehmmtrain(action', envtype', rewards', guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro,'VERBOSE', false, 'maxiterations', 1000, 'TOLERANCE',0.00001);
+[theta.trR, theta.trNR, theta.eH, theta.eT] = mazehmmtrain(action', envtype', rewards', theta_guess.trR, theta_guess.trNR, theta_guess.eH, theta_guess.eT,'VERBOSE', false, 'maxiterations', max_iterations, 'TOLERANCE', tolerance);
  
 end
 
