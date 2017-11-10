@@ -1,12 +1,14 @@
 function statehitrate_hmmvsmazehmm()
 hitrates = [];
-training_seq_lengths = floor(linspace(40,500,50));
+training_seq_lengths = floor(linspace(40,600,20));
+repetitions = 20;
+
 theta_type = 'gt2';
 labels = {'BW estimated theta', 'MBW estimated theta', 'MBW GT theta'};
 theta_gt = getModelParameters(0.01, theta_type);
-repetitions = 50;
 
-for seq_length=floor(training_seq_lengths)
+
+for seq_length=training_seq_lengths
         hitrates = cat (3, hitrates, calcHitrate(seq_length, repetitions, theta_gt));
 end
 hitrates = permute(hitrates, [1 3 2]);
@@ -27,7 +29,7 @@ for i=1:size(hitrates,3)
 end
 
 xlim([x(1)-10,x(end)+10])
-ylim([0.5,0.9])
+ylim([0.3,1])
 legend(labels)
 xlabel('Sequence length')
 ylabel('Hit-rate')
@@ -57,11 +59,11 @@ function hitrates = calcHitrate(seq_length, repetitions, theta_gt)
 theta_guess = getModelParameters( 0.01 , 'uniform' );
 
 max_iter = 500;
-tolerance = 1e-2;
+tolerance = 1e-4;
 hitrates = [];
 
 for i=1:repetitions
-[trainseq, testseq] = createTrainAndTestSequences(seq_length, 200, theta_gt, 0.5, [1 0; 1 0]);
+[trainseq, testseq] = createTrainAndTestSequences(seq_length, 100, theta_gt, 0.5, [1 0; 1 0]);
 %HMM%
 %Train
 [theta_hmm.tr, theta_hmm.e] = ...
