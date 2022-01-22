@@ -1,4 +1,4 @@
-function theta = getModelParameters( eps , type )
+function theta = getModelParameters(eps, type)
 %GETMODELPARAMETERS This function returns a intial model parameters.
 % The emission parameters are less interesting in our setup since the underlying
 % strategy and the current environemtn configuration decides
@@ -7,6 +7,7 @@ function theta = getModelParameters( eps , type )
 %   type - 'guess' initial sensible guess
 %          'random' - a random matrix,
 %          'uniform' - a uniform trannsion matrix
+
 
 if strcmp(type,'guess') || strcmp(type,'gt')
     theta.trR = [0.85 0.05 0.05 0.05
