@@ -1,129 +1,148 @@
-function test_mazehmmperfectguess()
+function mazehmmperfectguess()
 
-tr_res = [];
-e_res = [];
-iterations_res = [];
-steps = 10;
+hitrate = [];
+steps = 5;
 from = 0;
 to = 1;
-repeats = 50;
+noiseVec = linspace(from, to, steps);
+repeats = 25;
 for i=1:repeats
-    [trdistances,edistances, numIterations] = getdistanceforsequence(from,to,steps);
-    tr_res=[tr_res; trdistances];
-    e_res = [e_res; edistances];
-    iterations_res = [iterations_res; numIterations];
-    
+    [hitrate(i,:,1), ~] = getdistanceforsequence(noiseVec,@noiseCAHMM);
+    [hitrate(i,:,2), ~] = getdistanceforsequence(noiseVec,@noiseTr);
+    [hitrate(i,:,3), ~] = getdistanceforsequence(noiseVec,@noisePolices);
 end
+
+plot_gramm(hitrate,noiseVec);
+%hitrate_res = permute(hitrate_res, [1 3 2]);
+colors = [0.6350 0.0780 0.1840;
+        0.3010 0.7450 0.9330;
+        0.4660 0.6740 0.1880];
 
 figure;
 set(gca,'fontsize',22)
-bar(linspace(from,to,steps), mean(tr_res))
 hold on;
-errorb(linspace(from,to,steps), mean(tr_res),std(tr_res), 'linewidth', 1)
-xlabel('Noise Factor')
-%ylabel('KL(E||T)')
-ylabel('V(E,T)')
-title('Estimated transition probilities accuracy')
+for j=1:3
+    axe(j) = shadedErrorBar(linspace(from,to,steps),hitrate(:,:,j),{@mean,@sem}, {'-','Color',colors(j,:)},3);
+end
+xlabel('$\lambda$', 'Interpreter', 'latex')
+ylabel('$hitrate$', 'Interpreter', 'latex')
+set(gca,'fontsize',14)
+box off;
+yline(0.25, '--')
+ylim([0.2,0.9]);
+legend([axe(1).mainLine,axe(2).mainLine, axe(3).mainLine],...
+    '$N(\theta,\lambda)$','$N(\delta,\lambda)$','$N(\Pi,\lambda)$', 'Interpreter','latex')
 hold off;
 
-figure;
-set(gca,'fontsize',22)
-bar(linspace(from,to,steps), mean(e_res))
-hold on;
-errorb(linspace(from,to,steps), mean(e_res),std(e_res), 'linewidth', 1)
-xlabel('Noise Factor')
-ylabel('V(E,T)')
-title('Estimation Emission matrices accuracy')
-hold off;
-
-
-figure;
-set(gca,'fontsize',22)
-bar(linspace(from,to,steps), mean(iterations_res))
-hold on;
-errorb(linspace(from,to,steps), mean(iterations_res),std(iterations_res), 'linewidth', 1)
-xlabel('Noise Factor')
-ylabel('Number of iterations')
-title('Iteration needed for convergence')
-hold off
-
 end
 
-function [trR, trNR, eH, eT] = get_real_parameters()
-eps = 0.01;
-eH = [1-eps eps;
-    eps 1-eps;
-    1-eps eps;
-    eps 1-eps];
 
-eT = [1-eps eps; %o1l2 o2l1
-    eps 1-eps;
-    eps 1-eps;
-    1-eps eps];
+function [hitrate, numIterations] = getdistanceforsequence(noiseVec, noisefun)
 
-
-trR = [0.7 0.1 0.1 0.1;
-    0.1 0.7 0.1 0.1;
-    0.1 0.1 0.7 0.1;
-    0.7 0.1 0.1 0.7];
-
-
-trNR = [0.1 0.3 0.3 0.3;
-    0.3 0.1 0.3 0.3;
-    0.3 0.3 0.1 0.3;
-    0.3 0.3 0.3 0.1];
-
-end
-
-function [Trdistance, Edistance, numIterations] = getdistanceforsequence(noiseFrom, noiseTo, interval)
-
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
+theta_gt = getConstantGTparameters();
 
 env_type_frac = 0.5;
 sequenceLength = 1000;
+testsequenceLength = 100;
 
-[envtype,emissions, ~, rewards] = ...
-    mazehmmgenerate(sequenceLength, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
+[trainseq.envtype,trainseq.emissions, ~, trainseq.rewards] = ...
+    mazehmmgenerate(sequenceLength, theta_gt.trR, theta_gt.trNR, ...
+    theta_gt.eH, theta_gt.eT ,env_type_frac, [1 0; 0 1]);
 
-max_iter = 500;
+[testseq.envtype,testseq.emissions, testseq.states, testseq.rewards] = ...
+    mazehmmgenerate(testsequenceLength, theta_gt.trR, theta_gt.trNR, ...
+    theta_gt.eH, theta_gt.eT ,env_type_frac, [1 0; 0 1]);
+
+max_iterations = 500;
 tolerance = 1e-4;
-Trdistance = [];
-Edistance = [];
+
 numIterations = [];
-noiseVec = linspace(noiseFrom, noiseTo, interval);
+hitrate = [];
+
 
 for noise=noiseVec
     
-    seq_data.envtype = envtype;
-    seq_data.emissions = emissions;
-    seq_data.rewards = rewards;
+    theta_guess = noisefun(theta_gt, noise);
     
-    [guessTRr, guessTRnr] = createGuessTransitionsParameters(realTRr, realTRnr, noise) ;
+    [theta_hat.trR, theta_hat.trNR, theta_hat.eH, theta_hat.eT, logliks] = ...
+    mazehmmtrain(trainseq.emissions, trainseq.envtype , trainseq.rewards ,theta_guess.trR ,theta_guess.trNR ,...
+    theta_guess.eH, theta_guess.eT, 'VERBOSE',false, 'maxiterations', max_iterations, 'TOLERANCE', tolerance);
+
+    estimated_policies_seq = mazehmmviterbi(testseq.emissions, testseq.envtype, testseq.rewards,...
+            theta_hat.trR, theta_hat.trNR, theta_hat.eH, theta_hat.eT);
     
-    Ddistanceiter = run_hmm_train(seq_data, guessTRr, guessTRnr, realEhomo, realEhetro, max_iter, tolerance);
-    Trdistance = [Trdistance, Ddistanceiter(1)];
-    Edistance = [Edistance, Ddistanceiter(2)];
-    numIterations = [numIterations, Ddistanceiter(3)];
+    
+    policy_hit_rate = mean(MatchingPoliciesHitrate(estimated_policies_seq, testseq, theta_hat, theta_gt));
+    
+    numIterations = [numIterations,length(logliks)];
+    hitrate = [hitrate, policy_hit_rate];
 end
 end
 
 
-function tot_error = run_hmm_train(seq_data, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, max_iterations, tolerance)
+function noised_theta = noiseCAHMM(theta, eps)
+noised_theta = noiseTr(theta, eps);
+noised_theta = noisePolices(noised_theta, eps);
+end
 
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
+function noised_theta = noiseTr(theta, eps)
+noised_theta.trR  = NoiseProbabilityMatrix(eps, theta.trR);
+noised_theta.trNR = NoiseProbabilityMatrix(eps, theta.trNR);
+noised_theta.eH = theta.eH;
+noised_theta.eT = theta.eT;
+end
 
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro, logliks] = ...
-    mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
-    guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', max_iterations, 'TOLERANCE', tolerance);
+function noised_theta = noisePolices(theta, eps)
+noised_theta.trR  = theta.trR;
+noised_theta.trNR = theta.trNR;
+noised_theta.eH = NoiseProbabilityMatrix(eps, theta.eH);
+noised_theta.eT = NoiseProbabilityMatrix(eps, theta.eT);
+end
 
-diff_trans = mean([sum(sum(abs(est_trans_reward - realTRr))), sum(sum(abs(est_trans_noreward - realTRnr)))]);
-diff_emits = mean([sum(sum(abs(est_emits_homo - realEhomo))), sum(sum(abs(est_emits_hetro - realEhetro)))]);
+function plot_gramm(hitrate, noiseVec)
 
-numIterations = length(logliks);
+types = {'$N(\theta,\lambda)$','$N(\delta,\lambda)$','$N(\Pi,\lambda)$'};
 
-tot_error = [diff_trans, diff_emits, numIterations];
+types = {'Both','Transitions','Policies'};
 
+
+hit = [];
+lambda = [];
+type = [];
+for r=1:size(hitrate,1) %repetition
+    for s=1:size(hitrate,2) %lambda - noise size
+        for n=1:size(hitrate,3) % noised-param
+            hit = [hit; hitrate(r,s,n)];
+            lambda = [lambda; {num2str(noiseVec(s))}];
+            if s == 1
+                type = [type; types(1)];
+            else
+                type = [type; types(n)];
+            end
+        end
+    end
 end
 
 
+clear g;
+
+g(1,1)=gramm('x',type,'y',hit,'color',lambda);
+
+g(1,1).stat_violin('fill','transparent');
+%g(1,1).stat_boxplot()
+
+g.set_names('x','','y','$hitrate$','color','$\lambda$');
+g.set_text_options('font','Helvetica',...
+    'base_size',18,...
+    'label_scaling',1.2,...
+    'legend_scaling',1,...
+    'legend_title_scaling',1,...
+    'facet_scaling',1,...
+    'title_scaling',1, ...
+    'Interpreter', 'latex');
+
+
+figure()
+%g.coord_flip();
+g.draw();
+end

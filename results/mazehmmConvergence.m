@@ -1,39 +1,55 @@
-function test_mazehmm_convergence()
-% generate a sequence of trials using mazehmmgenerate with two environment type but no rewarded states.
-% The estimated transition and emmits probabilities should be the same as the sequence generation parameters.
-% The guess in this test is the same as the equence generation parametrres.
+function mazehmmConvergence()
 
 tr_res = [];
 e_res = [];
-steps = 100;
-from = 10;
-to = 1000;
-for i=1:20
+steps = 40;
+from = 50;
+to = 2000;
+
+repetition = 25;
+
+for i=1:repetition
     [trdistances,edistances] = getdistanceforsequence(from,to,steps);
     tr_res=[tr_res;trdistances];
     e_res = [e_res; edistances];
 end
 
 figure;
-set(gca,'fontsize',22)
-shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@std},'*b',3)
-xlabel('Sequence length')
-%ylabel('KL(E||T)')
-ylabel('V(E,T)')
-title('Modified Baum Welch - Transition matrices estimation accuracy')
+delta_color = [139,10,80]./255;
+pi_color = [69,139,116]./255;
+h_delta = shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@sem}, {'-','Color',delta_color},3);
+xlabel('$T$', 'Interpreter','latex')
+js_delta='$JS(\delta||\hat{\delta})$';
+ylabel(js_delta,'Interpreter','latex')
+%ylabel('V(E,T)')
+hold on;
+yyaxis right
+h_pi = shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@sem},{'-','Color',pi_color},3);
+js_pi = '$JS(\Pi||\hat{\Pi})$';
+ylabel(js_pi, 'Interpreter','latex')
+set(gca,'fontsize',14)
+box off;
+legend([h_delta.mainLine,h_pi.mainLine],js_delta,js_pi, 'Interpreter','latex')
+%title('Parameters Estimation accuracy')
 
-figure();
-set(gca,'fontsize',22)
-shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@std},'*b',3)
-xlabel('Sequence length')
-%ylabel('KL(E||T)')
-ylabel('V(E,T)')
-title('Modified Baum Welch - Emission Matrices Estimation Accuracy')
-
+ax = gca;
+ax.YAxis(1).Color = delta_color;
+ax.YAxis(2).Color = pi_color;
 end
 
-function [trR, trNR, eH, eT] = get_real_parameters()
-eps = 0.01;
+function [trR, trNR, eH, eT] = get_gt_parameters(N)
+
+eps_r = 0.5 + 0.5*rand(1,1);
+eps_nr =  0.5*rand(1,1);
+
+eH = getrandomdistribution(N,2);
+eT = getrandomdistribution(N,2);
+trR  = ((1-eps_r)/(N-1))*(ones(N)-eye(N)) + eye(N)*eps_r;
+trNR = ((1-eps_nr)/(N-1))*(ones(N)-eye(N)) + eye(N)*eps_nr;
+end
+
+
+function [trR, trNR, eH, eT] = get_real_parameters(eps)
 eH = [1-eps eps;
     eps 1-eps;
     1-eps eps;
@@ -58,15 +74,13 @@ trNR = [0.1 0.3 0.3 0.3;
 
 end
 
-function [Trdistance,Edistance] = getdistanceforsequence(from, to, interval)
+function [Trdistance,Edistance] = getdistanceforsequence(from, to, steps)
 % checks the correlation between the sequence length and the error in the
 % estimated matrices. The longer the sequence the more correct should be the trained model.
 
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
-
-
+[realTRr, realTRnr, realEhomo, realEhetro] = get_gt_parameters(4);
 env_type_frac = 0.5;
-[envtype,emissions, ~, rewards] = ...
+[envtype, emissions, ~, rewards] = ...
     mazehmmgenerate(to, realTRr, realTRnr, ...
     realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
 
@@ -75,10 +89,10 @@ tr_guess = getrandomdistribution(4,4);
 e_guess = getrandomdistribution(4,2);
 
 
-max_iter = 500;
+max_iter = 200;
 Trdistance = [];
 Edistance = [];
-lengths = linspace(from,to, interval);
+lengths = linspace(from,to, steps);
 
 for seq_length=floor(lengths)
     
@@ -86,8 +100,12 @@ for seq_length=floor(lengths)
     seq_data.emissions = emissions(1:seq_length);
     seq_data.rewards = rewards(1:seq_length);
     
-    %Ddistanceiter = run_hmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
-    Ddistanceiter = run_hmm_train(seq_data, realTRr, realTRnr, realEhomo, realEhetro, max_iter);
+    %Maze HMM
+    % Ddistanceiter = run_mazehmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
+    
+    % HMM
+    Ddistanceiter = run_hmm_train(seq_data, tr_guess, e_guess, max_iter);
+    
     Trdistance = [Trdistance, Ddistanceiter(1)];
     Edistance = [Edistance, Ddistanceiter(2)];
 end
@@ -95,54 +113,40 @@ end
 
 
 
+function tot_error = run_mazehmm_train(seq_data, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, max_iterations)
 
-function test_max_iter()
-% checks the correlation between the max numer of iterations and the error in the
-% estimated matrices. The larger the max iteration the  more correct should be the trained model.
+[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters(0.1);
 
-[guessTRr, guessTRnr, guessEhomo, guessEhetro] = get_guess_parameters();
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
-
-env_type_frac = 0.5;
-[envtype,emissions, ~, rewards] = ...
-    mazehmmgenerate(1500, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, []);
-
-max_iters = 1000:1000:4000;
-
-res = [];
-for max_iter = max_iters
-    
-    seq_data.envtype = envtype;
-    seq_data.emissions = emissions;
-    seq_data.rewards = rewards;
-    res_iter = run_hmm_train(seq_data, guessTRr, guessTRnr, guessEhomo, guessEhetro, max_iter);
-    res = [res; res_iter(1), res_iter(2) + res_iter(3)];
-end
-
-plot(max_iters, res(:,1));
-title('Estimation accuracy of the transition matrix vs. max number of Baum Welch iterations.');
-xlabel('max iteration');
-ylabel('accuracy (dist. between the estimated and real trans matrix)');
-end
-
-function tot_error = run_hmm_train(seq_data, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, max_iterations)
-
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters();
-
-[est_trans_reward, est_trans_noreward, est_emits_homo, est_emits_hetro] = ...
+[est_trans_reward, est_trans_noreward, est_actions_homo, est_actions_hetro] = ...
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
-    guess_emit_homo, guess_emit_hetro, 'VERBOSE',true, 'maxiterations', max_iterations);
+    guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', max_iterations);
 
+[policies_match,diff_policies] = MatchandComparePolicies([{realEhomo},{realEhetro}],[{est_actions_homo}, {est_actions_hetro}]);
 
-%diff_trans = mean([sum(JSDiv(est_trans_reward ,realTRr)), sum(JSDiv(est_trans_noreward ,realTRnr))]);
-%diff_emits = mean([sum(JSDiv(est_emits_homo, realEhomo)), sum(JSDiv(est_emits_hetro, realEhetro))]);
+order = policies_match(:,1);
+est_trans_noreward = est_trans_noreward(order,:);
+est_trans_reward = est_trans_reward(order,:);
 
-diff_trans = mean([sum(sum(abs(est_trans_reward - realTRr))), sum(sum(abs(est_trans_noreward - realTRnr)))]);
-diff_emits = mean([sum(sum(abs(est_emits_homo - realEhomo))), sum(sum(abs(est_emits_hetro - realEhetro)))]);
+diff_trans = mean([sum(JSDiv(est_trans_reward ,realTRr)), sum(JSDiv(est_trans_noreward ,realTRnr))]);
 
-
-tot_error = [diff_trans, diff_emits];
+tot_error = [diff_trans, mean(diff_policies)];
 
 end
 
+function tot_error = run_hmm_train(seq_data, guess_trans,  guess_emit, max_iterations)
+
+[realTR, realTRnr, realEhomo, realEhetro] = get_gt_parameters(4);
+
+[est_trans, est_emits] = ...
+    hmmtrain(seq_data.emissions, guess_trans, guess_emit, 'VERBOSE',false, 'maxiterations', max_iterations);
+
+
+[policies_match,diff_policies] = MatchandComparePolicies([{realEhomo},{realEhetro}],[{est_emits}, {est_emits}]);
+
+order = policies_match(:,1);
+est_trans = est_trans(order,:);
+
+diff_trans = mean([sum(JSDiv(est_trans ,realTR)),sum(JSDiv(est_trans ,realTRnr))]);
+tot_error = [diff_trans, mean(diff_policies)];
+
+end
