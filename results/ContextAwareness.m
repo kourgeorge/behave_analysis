@@ -1,4 +1,4 @@
-function contextAwareness
+function ContextAwareness
 %CONTEXTAWARE Summary of this function goes here
 %   Detailed explanation goes here
 
