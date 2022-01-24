@@ -1,4 +1,4 @@
-function mazehmmperfectguess()
+function HitrateInitialGuess()
 
 hitrate = [];
 repeats = 25;
