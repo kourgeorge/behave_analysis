@@ -1,43 +1,23 @@
 function mazehmmperfectguess()
 
 hitrate = [];
-steps = 5;
-from = 0;
-to = 1;
-noiseVec = linspace(from, to, steps);
 repeats = 25;
+
+types = repmat({'$N(\theta,0)$', '$N(\delta,1)$','$N(\Pi,1)$', '$N(\theta,1)$'},repeats,1);
+
 for i=1:repeats
-    [hitrate(i,:,1), ~] = getdistanceforsequence(noiseVec,@noiseCAHMM);
-    [hitrate(i,:,2), ~] = getdistanceforsequence(noiseVec,@noiseTr);
-    [hitrate(i,:,3), ~] = getdistanceforsequence(noiseVec,@noisePolices);
+    [hitrate(i,1), ~] = runPerfectGuessExp(0,@noiseCAHMM);
+    [hitrate(i,2), ~] = runPerfectGuessExp(1,@noiseTr);
+    [hitrate(i,3), ~] = runPerfectGuessExp(1,@noisePolices);
+    [hitrate(i,4), ~] = runPerfectGuessExp(1,@noiseCAHMM);
 end
 
-plot_gramm(hitrate,noiseVec);
-%hitrate_res = permute(hitrate_res, [1 3 2]);
-colors = [0.6350 0.0780 0.1840;
-        0.3010 0.7450 0.9330;
-        0.4660 0.6740 0.1880];
-
-figure;
-set(gca,'fontsize',22)
-hold on;
-for j=1:3
-    axe(j) = shadedErrorBar(linspace(from,to,steps),hitrate(:,:,j),{@mean,@sem}, {'-','Color',colors(j,:)},3);
-end
-xlabel('$\lambda$', 'Interpreter', 'latex')
-ylabel('$hitrate$', 'Interpreter', 'latex')
-set(gca,'fontsize',14)
-box off;
-yline(0.25, '--')
-ylim([0.2,0.9]);
-legend([axe(1).mainLine,axe(2).mainLine, axe(3).mainLine],...
-    '$N(\theta,\lambda)$','$N(\delta,\lambda)$','$N(\Pi,\lambda)$', 'Interpreter','latex')
-hold off;
+plot_gramm(hitrate(:),types(:));
 
 end
 
 
-function [hitrate, numIterations] = getdistanceforsequence(noiseVec, noisefun)
+function [hitrate, numIterations] = runPerfectGuessExp(noiseVec, noisefun)
 
 theta_gt = getConstantGTparameters();
 
@@ -99,39 +79,15 @@ noised_theta.eH = NoiseProbabilityMatrix(eps, theta.eH);
 noised_theta.eT = NoiseProbabilityMatrix(eps, theta.eT);
 end
 
-function plot_gramm(hitrate, noiseVec)
-
-types = {'$N(\theta,\lambda)$','$N(\delta,\lambda)$','$N(\Pi,\lambda)$'};
-
-types = {'Both','Transitions','Policies'};
-
-
-hit = [];
-lambda = [];
-type = [];
-for r=1:size(hitrate,1) %repetition
-    for s=1:size(hitrate,2) %lambda - noise size
-        for n=1:size(hitrate,3) % noised-param
-            hit = [hit; hitrate(r,s,n)];
-            lambda = [lambda; {num2str(noiseVec(s))}];
-            if s == 1
-                type = [type; types(1)];
-            else
-                type = [type; types(n)];
-            end
-        end
-    end
-end
-
+function plot_gramm(hitrate, types)
 
 clear g;
+x = repmat({' ',' ', ' ',' '},length(hitrate)/4,1);
+g(1,1)=gramm('x', x(:) ,'y',hitrate,'color',types);
 
-g(1,1)=gramm('x',type,'y',hit,'color',lambda);
+g(1,1).stat_boxplot('dodge',1, 'width',0.8)
 
-g(1,1).stat_violin('fill','transparent');
-%g(1,1).stat_boxplot()
-
-g.set_names('x','','y','$hitrate$','color','$\lambda$');
+g.set_names('x','','y','$hitrate$','color','');
 g.set_text_options('font','Helvetica',...
     'base_size',18,...
     'label_scaling',1.2,...
@@ -140,9 +96,11 @@ g.set_text_options('font','Helvetica',...
     'facet_scaling',1,...
     'title_scaling',1, ...
     'Interpreter', 'latex');
-
-
+g.axe_property('YLim',[0 1]);
+g.set_order_options('color',1);
 figure()
-%g.coord_flip();
+g.coord_flip();
 g.draw();
+g.export('file_name','hitrate','file_type','png')
+
 end
