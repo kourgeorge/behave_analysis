@@ -18,10 +18,9 @@ figure;
 delta_color = [139,10,80]./255;
 pi_color = [69,139,116]./255;
 h_delta = shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@sem}, {'-','Color',delta_color},3);
-xlabel('$T$', 'Interpreter','latex')
+xlabel('$\ell^{train}$', 'Interpreter','latex')
 js_delta='$JS(\delta||\hat{\delta})$';
-ylabel(js_delta,'Interpreter','latex')
-%ylabel('V(E,T)')
+ylabel('$JS(\delta||\hat{\delta}$','Interpreter','latex')
 hold on;
 yyaxis right
 h_pi = shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@sem},{'-','Color',pi_color},3);
@@ -47,7 +46,6 @@ eT = getrandomdistribution(N,2);
 trR  = ((1-eps_r)/(N-1))*(ones(N)-eye(N)) + eye(N)*eps_r;
 trNR = ((1-eps_nr)/(N-1))*(ones(N)-eye(N)) + eye(N)*eps_nr;
 end
-
 
 function [trR, trNR, eH, eT] = get_real_parameters(eps)
 eH = [1-eps eps;
@@ -101,10 +99,10 @@ for seq_length=floor(lengths)
     seq_data.rewards = rewards(1:seq_length);
     
     %Maze HMM
-    % Ddistanceiter = run_mazehmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
+    Ddistanceiter = run_mazehmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
     
     % HMM
-    Ddistanceiter = run_hmm_train(seq_data, tr_guess, e_guess, max_iter);
+    %Ddistanceiter = run_maze_train(seq_data, tr_guess, e_guess, max_iter);
     
     Trdistance = [Trdistance, Ddistanceiter(1)];
     Edistance = [Edistance, Ddistanceiter(2)];
@@ -112,24 +110,19 @@ end
 end
 
 
-
 function tot_error = run_mazehmm_train(seq_data, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, max_iterations)
 
-[realTRr, realTRnr, realEhomo, realEhetro] = get_real_parameters(0.1);
+[theta_gt.trR, theta_gt.trNR, theta_gt.eH, theta_gt.eT] = get_real_parameters(0.1);
 
-[est_trans_reward, est_trans_noreward, est_actions_homo, est_actions_hetro] = ...
+[theta_hat.trR, theta_hat.trNR, theta_hat.eH, theta_hat.eT] = ...
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
     guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', max_iterations);
 
-[policies_match,diff_policies] = MatchandComparePolicies([{realEhomo},{realEhetro}],[{est_actions_homo}, {est_actions_hetro}]);
 
-order = policies_match(:,1);
-est_trans_noreward = est_trans_noreward(order,:);
-est_trans_reward = est_trans_reward(order,:);
+[trans_JS,policies_JS] = paramatersJS(theta_gt,theta_hat);
 
-diff_trans = mean([sum(JSDiv(est_trans_reward ,realTRr)), sum(JSDiv(est_trans_noreward ,realTRnr))]);
 
-tot_error = [diff_trans, mean(diff_policies)];
+tot_error = [trans_JS, policies_JS];
 
 end
 
