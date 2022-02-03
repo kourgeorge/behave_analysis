@@ -20,7 +20,7 @@ pi_color = [69,139,116]./255;
 h_delta = shadedErrorBar(linspace(from,to,steps),tr_res,{@mean,@sem}, {'-','Color',delta_color},3);
 xlabel('$\ell^{train}$', 'Interpreter','latex')
 js_delta='$JS(\delta||\hat{\delta})$';
-ylabel('$JS(\delta||\hat{\delta}$','Interpreter','latex')
+ylabel('$JS(\delta||\hat{\delta})$','Interpreter','latex')
 hold on;
 yyaxis right
 h_pi = shadedErrorBar(linspace(from,to,steps),e_res,{@mean,@sem},{'-','Color',pi_color},3);

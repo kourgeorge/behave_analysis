@@ -5,16 +5,16 @@ function mazehmmvsHmm()
 
 res_hmm = [];
 res_mazehmm = [];
-for i=1:50
-    [hmmdistance, mazehmmdistance]=getdistanceforsequence(100,1000,5);
+for i=1:2
+    [hmmdistance, mazehmmdistance]=getdistanceforsequence(100,1000,10);
     res_hmm = [res_hmm; hmmdistance];
     res_mazehmm = [res_mazehmm; mazehmmdistance];
 end
 
-mean_res1 = mean(res_hmm);
-mean_res2 = mean(res_mazehmm);
+mean_res_hmm = mean(res_hmm);
+mean_res_mazehmm = mean(res_mazehmm);
 
-plot(mean_res);
+plot(mean_res_mazehmm);
 title('Model accuracy vs. sequence length.');
 xlabel('# of trials');
 ylabel('d(Mreal, Mest.)');
@@ -67,7 +67,7 @@ tr_guess = getrandomdistribution(4,4);
 e_guess = getrandomdistribution(4,2);
 
 
-max_iter = 1500;
+max_iter = 15;
 mazehmmdistance = [];
 hmmdistance=[];
 lengths = linspace(from,to, interval);

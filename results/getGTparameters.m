@@ -22,11 +22,5 @@ theta_gt.eT = [1-eps eps;
     1-eps eps];
 
 
-
-% x = 1:-1:0;
-% theta_gt.eH = getrandomdistribution(2,2);
-% theta_gt.eT = x*theta_gt.eH+(1-x)*inverse(theta_gt.eH);
-
-
 end
 

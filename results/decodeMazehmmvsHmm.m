@@ -6,24 +6,29 @@ function decodeMazehmmvsHmm()
 res_hmmprobs = [];
 res_mazehmmprobs = [];
 res_mazehmmprobsreal = [];
-for i=1:50
-    [hmmprobs, mazehmmprobs, mazehmmprobsreal]=calcseqposteriorprobability(100,1000,5);
+repetitions = 5;
+train_seq_lengths =  floor(linspace(100,1000,5));
+for i=1:repetitions
+    [hmmprobs, mazehmmprobs, mazehmmprobsreal]=calcseqposteriorprobability(train_seq_lengths);
     res_hmmprobs = [res_hmmprobs; hmmprobs];
     res_mazehmmprobs = [res_mazehmmprobs; mazehmmprobs];
     res_mazehmmprobsreal=[res_mazehmmprobsreal;mazehmmprobsreal];
 end
 
-norm_mazehmmprobs = res_mazehmmprobs-res_mazehmmprobsreal;
-norm_hmmprobs = res_hmmprobs-res_mazehmmprobsreal;
+% norm_mazehmmprobs = res_mazehmmprobs-res_mazehmmprobsreal;
+% norm_hmmprobs = res_hmmprobs-res_mazehmmprobsreal;
+
+y = [mean(res_mazehmmprobsreal); mean(res_mazehmmprobs); mean(res_hmmprobs)]';
 
 figure
 set(gca,'fontsize',22)
-bar(floor(linspace(100,1000,5))', [mean(res_mazehmmprobsreal); mean(res_mazehmmprobs); mean(res_hmmprobs)]','LineWidth',1.5)
+hh = bar(train_seq_lengths, y , 'LineWidth',1.5)
 legend('SCA-HMM true','SCA-HMM estimated', 'HMM estimated')
 xlabel('Sequence length')
-ylabel('Posterior log probability')
+ylabel('Posterior -log probability')
 title('Comparing the posterior probability of SCA-HMM and HMM')
-ylim([-220, 0])
+set(hh(1),'YScale','log')
+%ylim([-220, 0])
 
 end
 
@@ -53,7 +58,7 @@ trNR = [0.1 0.3 0.3 0.3;
 
 end
 
-function [hmmprobs, mazehmmprobs, mazehmmprobsreal] = calcseqposteriorprobability(from, to, interval)
+function [hmmprobs, mazehmmprobs, mazehmmprobsreal] = calcseqposteriorprobability(train_seq_lengths)
 % checks the correlation between the sequence length and the error in the
 % estimated matrices. The longer the sequence the more correct should be the trained model.
 
@@ -79,9 +84,8 @@ tolerance = 1e-2;
 mazehmmprobs = [];
 hmmprobs=[];
 mazehmmprobsreal=[];
-lengths = linspace(from,to, interval);
 
-for seq_length=floor(lengths)
+for seq_length=train_seq_lengths
     
     seq_data.envtype = envtype(1:seq_length);
     seq_data.emissions = emissions(1:seq_length);
@@ -89,7 +93,7 @@ for seq_length=floor(lengths)
     
     [mazehmmestimate,hmmestimate] = run_train(seq_data, guess, max_iter, tolerance);
     
-    postprobs = decode(mazehmmestimate,hmmestimate, testseq);
+    postprobs = -decode(mazehmmestimate,hmmestimate, testseq);
     
     mazehmmprobs = [mazehmmprobs, postprobs(1)];
     hmmprobs = [hmmprobs, postprobs(2)];

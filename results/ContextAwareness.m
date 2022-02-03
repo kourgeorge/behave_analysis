@@ -3,8 +3,8 @@ function ContextAwareness
 %   Detailed explanation goes here
 
 types = {'$\hat{\theta}_{HMM}$', '$\hat{\theta}_{CA-HMM}$', '$\theta_{CA-HMM}$'};
-repetitions = 50;
-[hitrates, gt_awarness] = calcPdiv(repetitions);
+repetitions = 100;
+[hitrates, gt_awarness] = runExperiment(repetitions);
 
 models = repmat(types,repetitions,1);
 awarness = repmat(gt_awarness',1,length(types));
@@ -12,24 +12,22 @@ gramm_graph(awarness(:), hitrates(:), models(:));
 
 end
 
-function [hitrates, gt_awarness] = calcPdiv(repetitions)
-% checks the correlation between the sequence length and the error in the
-% estimated matrices. The longer the sequence the more correct should be the trained model.
-theta_guess.trR = getrandomdistribution(2,2);
-theta_guess.trNR = getrandomdistribution(2,2);
-theta_guess.eH = getrandomdistribution(2,2);
-theta_guess.eT = getrandomdistribution(2,2);
+function [hitrates, gt_awarness] = runExperiment(repetitions)
+theta_guess.trR = getrandomdistribution(4,4);
+theta_guess.trNR = getrandomdistribution(4,4);
+theta_guess.eH = getrandomdistribution(4,2);
+theta_guess.eT = getrandomdistribution(4,2);
 
 R = [1 0; 0 1];
 train_len = 1000;
 test_len = 100;
-max_iter = 200;
+max_iter = 500;
 tolerance = 1e-4;
 gt_awarness= [];
 hitrates=[];
 for rep=1:repetitions
-    theta_gt = get2policiesparameters(2);
-
+    theta_gt = get2policiesparameters(4);
+    %theta_gt = getGTparameters(4);
     
     [trainseq.envtype, trainseq.emissions, trainseq.states, trainseq.rewards] = ...
         mazehmmgenerate(train_len, theta_gt.trR, theta_gt.trNR, ...
@@ -68,9 +66,9 @@ for rep=1:repetitions
         theta_gt.trR, theta_gt.trNR, theta_gt.eH, theta_gt.eT);
     %%%%
     
-    mazehmm_gt_hitrate= mean(ActionDivergence(estimatedstates_gt, testseq, theta_gt, theta_gt));
-    mazehmm_hitrate = mean(ActionDivergence(estimatedstates_mazehmm, testseq, theta_mazehmm,  theta_gt));
-    hmm_hitrate = mean(ActionDivergence(estimatedstates_hmm, testseq, theta_hmm, theta_gt));
+    mazehmm_gt_hitrate= mean(PolicyDivergence(estimatedstates_gt, testseq, theta_gt, theta_gt));
+    mazehmm_hitrate = mean(PolicyDivergence(estimatedstates_mazehmm, testseq, theta_mazehmm,  theta_gt));
+    hmm_hitrate = mean(PolicyDivergence(estimatedstates_hmm, testseq, theta_hmm, theta_gt));
     hitrates = [hitrates; hmm_hitrate, mazehmm_hitrate, mazehmm_gt_hitrate];
     gt_awarness(rep) = PoliciesContextAwareness(theta_gt);
 end
@@ -100,7 +98,7 @@ g(1,1)=gramm('x',awarness,'y',hitrates(:),'color',models);
 g.geom_point();
 g(1,1).stat_glm()
 
-g.set_names('x','$CA(\Pi)$','y','$Adiv$','color',' ');
+g.set_names('x','$CA(\Pi)$','y','$Pdiv(z^{test}, \hat{z}^{test}_t)$','color',' ');
 g.set_text_options('font','Helvetica',...
     'base_size',18,...
     'label_scaling',1.2,...
@@ -113,6 +111,7 @@ g.set_text_options('font','Helvetica',...
 
 figure();
 g.set_order_options('color',0);
+g.set_layout_options('legend_pos',[0.17 0.65 0.1 0.3])
 g.draw();
 
 g.export('file_name','Adiv','file_type','png')

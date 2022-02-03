@@ -5,7 +5,7 @@ function ParameterRecovery()
 transJS = [];
 policiesJS = [];
 repeats = 45;
-noisevec = [-0.1, 0.25 ,0.5, 0.75, 1];
+noisevec = [0.25 ,0.5, 0.75, 1, -1];
 hitrate = [];
 
 for i=1:repeats
@@ -81,7 +81,7 @@ testsequenceLength = 100;
     mazehmmgenerate(testsequenceLength, theta_gt.trR, theta_gt.trNR, ...
     theta_gt.eH, theta_gt.eT ,env_type_frac, [1 0; 0 1]);
 
-max_iterations = 500;
+max_iterations = 200;
 tolerance = 1e-4;
 
 transJS = [];
@@ -153,16 +153,14 @@ g(1,3).set_layout_options('legend_pos',[0.82 0.1 0.1 0.3])
 
 % figs 2 and 3
 
-categories = repmat({'Untrained', 'Trained',...
-    'Trained', 'Trained','Trained'},reps,1);
+categories = repmat({'Trained',...
+    'Trained', 'Trained','Trained','Untrained'},reps,1);
 
-types_delta = repmat(noisevec,reps,1);
-types_pi = repmat(noisevec,reps,1);
-types_delta(:,1) =1;
-types_pi(:,1) =1;
+noise_volume = repmat(noisevec,reps,1);
+noise_volume(noise_volume<0)=1;
 
-g(1,2)=gramm('x', types_delta(:) ,'y',transJS(:),'color',categories(:));
-g(1,1)=gramm('x', types_pi(:) ,'y',policiesJS(:), 'color', categories(:));
+g(1,2)=gramm('x', noise_volume(:) ,'y',transJS(:),'color',categories(:));
+g(1,1)=gramm('x', noise_volume(:) ,'y',policiesJS(:), 'color', categories(:));
 
 g(1,2).stat_boxplot('dodge',1, 'width',1.0);
 g(1,1).stat_boxplot('dodge',1, 'width',1.0);
@@ -185,7 +183,7 @@ g.set_order_options('color',-1);
 g(1,2).set_color_options('map','d3_10');
 g(1,1).set_color_options('map','d3_10');
 g(1,1).no_legend();
-g(1,2).set_layout_options('legend_pos',[0.5 0.1 0.1 0.3])
+g(1,2).set_layout_options('legend_pos',[0.48 0.1 0.1 0.3])
 %g(1,1).axe_property('XTickLabel',[0.25,0.5,1]);
 %g(1,2).axe_property('XTickLabel',{'','0.5', '1'});
 figure();

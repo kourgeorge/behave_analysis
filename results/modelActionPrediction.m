@@ -160,7 +160,8 @@ mean = [];
 var = [];
 for train_sequence_length = seq_lengthes
     disp (['Processing sequence length: ', num2str(train_sequence_length)])
-    [accuracy_mean, accuracy_var] = calculateModelAccuracyOnData(behave_data);
+    theta = getModelParameters( 0.01 , 'gt2' ); %???
+    [accuracy_mean, accuracy_var] = calculateModelAccuracyOnData(behave_data,theta);
     mean = [mean, accuracy_mean];
     var = [var, accuracy_var];
 end
