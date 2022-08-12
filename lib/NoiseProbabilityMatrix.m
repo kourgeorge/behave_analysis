@@ -5,7 +5,7 @@ function [ moisedmat ] = NoiseProbabilityMatrix( noiseVal, mat )
 [m,n] = size(mat);
 
 temp = (1-noiseVal).*mat + noiseVal.* getrandomdistribution(m,n);
-denom = repmat(sum(mat, 2), [1, n]);
+denom = repmat(sum(temp, 2), [1, n]);
 moisedmat = temp./denom;
 
 end
