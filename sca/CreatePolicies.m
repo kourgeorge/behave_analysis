@@ -1,4 +1,5 @@
 function policies = CreatePolicies(statesactions)
+% Reformat polcies, from statesactions tables to policies table.
 
 policies = [];
 num_states = length(statesactions);
