@@ -4,16 +4,21 @@ tr_res = [];
 e_res = [];
 steps = 20;
 from = 50;
-to = 2000;
+to = 750;
 
-repetition = 45;
+repetition = 30;
 
 for i=1:repetition
     [trdistances,edistances] = getdistanceforsequence(from,to,steps);
     tr_res=[tr_res;trdistances];
     e_res = [e_res; edistances];
 end
+save('CAhmmConvergence_res', tr_res, e_res)
+plot_results(tr_res, e_res)
 
+end
+
+function plot_results(tr_res, e_res)
 figure;
 delta_color = [139,10,80]./255;
 pi_color = [69,139,116]./255;
@@ -47,44 +52,21 @@ trR  = ((1-eps_r)/(N-1))*(ones(N)-eye(N)) + eye(N)*eps_r;
 trNR = ((1-eps_nr)/(N-1))*(ones(N)-eye(N)) + eye(N)*eps_nr;
 end
 
-function [trR, trNR, eH, eT] = get_real_parameters(eps)
-eH = [1-eps eps;
-    eps 1-eps;
-    1-eps eps;
-    eps 1-eps];
-
-eT = [1-eps eps; %o1l2 o2l1
-    eps 1-eps;
-    eps 1-eps;
-    1-eps eps];
-
-
-trR = [0.7 0.1 0.1 0.1;
-    0.1 0.7 0.1 0.1;
-    0.1 0.1 0.7 0.1;
-    0.7 0.1 0.1 0.7];
-
-
-trNR = [0.1 0.3 0.3 0.3;
-    0.3 0.1 0.3 0.3;
-    0.3 0.3 0.1 0.3;
-    0.3 0.3 0.3 0.1];
-
-end
-
 function [Trdistance,Edistance] = getdistanceforsequence(from, to, steps)
 % checks the correlation between the sequence length and the error in the
 % estimated matrices. The longer the sequence the more correct should be the trained model.
 
-[realTRr, realTRnr, realEhomo, realEhetro] = get_gt_parameters(4);
+[theta_gt.trR, theta_gt.trNR, theta_gt.eH, theta_gt.eT] = get_gt_parameters(4);
 env_type_frac = 0.5;
 [envtype, emissions, ~, rewards] = ...
-    mazehmmgenerate(to, realTRr, realTRnr, ...
-    realEhomo, realEhetro ,env_type_frac, [1 0; 0 1]);
+    mazehmmgenerate(to, theta_gt.trR, theta_gt.trNR, ...
+    theta_gt.eH, theta_gt.eT ,env_type_frac, [1 0; 0 1]);
 
 
-tr_guess = getrandomdistribution(4,4);
-e_guess = getrandomdistribution(4,2);
+guess.trR = NoiseProbabilityMatrix(1, theta_gt.trR);
+guess.trNR = NoiseProbabilityMatrix(1, theta_gt.trNR);
+guess.eH = NoiseProbabilityMatrix(1, theta_gt.eH);
+guess.eT = NoiseProbabilityMatrix(1, theta_gt.eT);
 
 
 max_iter = 200;
@@ -99,7 +81,7 @@ for seq_length=floor(lengths)
     seq_data.rewards = rewards(1:seq_length);
     
     %CAHMM
-    Ddistanceiter = run_cahmm_train(seq_data, tr_guess, tr_guess, e_guess, e_guess, max_iter);
+    Ddistanceiter = run_cahmm_train(seq_data, theta_gt, guess, max_iter);
     
     % HMM
     %Ddistanceiter = run_maze_train(seq_data, tr_guess, e_guess, max_iter);
@@ -109,18 +91,16 @@ for seq_length=floor(lengths)
 end
 end
 
-function tot_error = run_cahmm_train(seq_data, guess_trans_reward, guess_trans_noreward, guess_emit_homo, guess_emit_hetro, max_iterations)
-
-[theta_gt.trR, theta_gt.trNR, theta_gt.eH, theta_gt.eT] = get_real_parameters(0.1);
+function tot_error = run_cahmm_train(seq_data, theta_gt, guess, max_iterations)
 
 % [theta_hat.trR, theta_hat.trNR, theta_hat.eH, theta_hat.eT] = ...
 %     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
 %     guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', max_iterations);
 
-guess_policies = neurolate_tabular_policies({guess_emit_homo, guess_emit_hetro});
+guess_policies = neurolate_tabular_policies({guess.eH , guess.eT});
 
 [theta_hat.trR, theta_hat.trNR, models_hat] = ...
-    scahmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
+    scahmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess.trR  ,guess.trNR ,...
     guess_policies, 'VERBOSE', true, 'maxiterations', max_iterations);
 
 table_policies = tabulate_neural_policies(models_hat, 2);
