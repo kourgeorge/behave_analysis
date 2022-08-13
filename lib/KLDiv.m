@@ -24,7 +24,7 @@ P(P<1e-6)=1e-6;
 if size(Q,1)==1
     Q = Q ./sum(Q);
     P = P ./repmat(sum(P,2),[1 size(P,2)]);
-    temp = P.*log(P./repmat(Q,[size(P,1) 1]));
+    temp = P.*log2(P./repmat(Q,[size(P,1) 1]));
     temp(isnan(temp))=0;% resolving the case when P(i)==0
     dist = sum(temp,2);
     
