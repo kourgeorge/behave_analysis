@@ -89,7 +89,7 @@ customStatenames = false;
 %     end
 % end
 
-state_action_probs = tabulate_neural_policies(policies,numStates);
+%state_action_probs = tabulate_neural_policies(policies,numStates);
 
 
 % work in log space to avoid numerical issues
@@ -122,7 +122,7 @@ for count = 1:L
         logTR = logTRnoreward;
     end
     
-    curr_state = envstates(count);
+    curr_state = envstates{count};
     curr_action = actions(count);
     
     for policy = 1:numPolicies
@@ -141,7 +141,8 @@ for count = 1:L
         % save the best transition information for later backtracking
         pTR(policy,count) = bestPTR;
         % update v
-        actionsprobs = state_action_probs{curr_state}(policy,:); 
+        %actionsprobs = state_action_probs{curr_state}(policy,:); 
+        actionsprobs = policies{policy}(curr_state');
         v(policy) = actionsprobs(curr_action) + bestVal;
     end
     vOld = v;

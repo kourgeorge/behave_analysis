@@ -1,4 +1,4 @@
-function [pStates,pSeq, fs, bs, s] = scahmmdecode(actionseq, envstate, reward,trR,trNR,policies,varargin)
+function [pStates,pSeq, fs, bs, s] = scahmmdecode(actionseq, envstates, reward,trR,trNR,policies,varargin)
 %HMMDECODE calculates the posterior state probabilities of a sequence.
 %   PSTATES = HMMDECODE(SEQ,TRANSITIONS,EMISSIONS) calculates the
 %   posterior state probabilities, PSTATES, of sequence SEQ from a Hidden
@@ -63,8 +63,12 @@ function [pStates,pSeq, fs, bs, s] = scahmmdecode(actionseq, envstate, reward,tr
 numPolicies = size(trR,1);
 numStates = policies{1}.inputs{1}.size;
 
+discrete_states = false;
+if isnumeric(envstates)
+    discrete_states=true;
+    state_action_probs = tabulate_neural_policies(policies,numStates);
+end
 
-state_action_probs = tabulate_neural_policies(policies,numStates);
 
 checkTr = size(trR,2);
 if checkTr ~= numPolicies
@@ -109,7 +113,7 @@ end
 
 % add extra symbols to start to make algorithm cleaner at f0 and b0
 actionseq = [numActions+1, actionseq ];
-envstate = [-1, envstate];
+envstates = [-1, envstates];
 reward = [-1, reward];
 L = length(actionseq);
 
@@ -139,7 +143,12 @@ for count = 2:L
         else
             tr = trNR;
         end
-        action_prob = state_action_probs{envstate(count)}(policy_ind, actionseq(count));
+        if discrete_states
+            action_prob = state_action_probs{envstates(count)}(policy_ind, actionseq(count));
+        else
+            all_actions_prob = policies{policy_ind}(envstates{count}');
+            action_prob = all_actions_prob(actionseq(count));
+        end
         fs(policy_ind,count) = action_prob .* (sum(fs(:,count-1) .*tr(:,policy_ind)));
     end
     % scale factor normalizes sum(fs,count) to be 1. 
@@ -169,14 +178,18 @@ for count = L-1:-1:1
         else
             tr = trNR;
         end
-%         next_state_onehot = onehot(envstate(count+1), 1:numStates);
+%        next_state_onehot = onehot(envstate(count+1), 1:numStates);
 %        next_action = actionseq(count+1);
-%         b = zeros(numPolicies, 1);
-%         for p_j = 1:numPolicies
-%            next_state_action_dist = policies{p_j}(next_state_onehot');
-%            b(p_j) = next_state_action_dist(next_action);
-%         end
-        b = state_action_probs{envstate(count+1)}(:,actionseq(count+1));
+        if ~discrete_states
+            b = zeros(numPolicies, 1);
+            for p_j = 1:numPolicies
+               next_state_action_dist = policies{p_j}(envstates{count+1}');
+               b(p_j) = next_state_action_dist(actionseq(count+1));
+            end
+        else
+            b = state_action_probs{envstates(count+1)}(:,actionseq(count+1));
+        end
+        
         bs(policy_ind,count) = (1/s(count+1)) * sum( tr(policy_ind,:)'.* bs(:,count+1) .* b);
         %e(:,actionseq(count+1))); %%?????
     end

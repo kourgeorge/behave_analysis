@@ -1,9 +1,21 @@
 function [guessTRr, guessTRnr, guessPolicies, logliks] = scahmmtrain(actions, envstates, rewards, guessTRr, guessTRnr, guessPolicies, varargin)
 
-tol = 1e-5;
+
+tol = 1e-2;
 trtol = tol;
 etol = tol;
-maxiter = 200;
+maxiter = 10;
+
+discrete_states=false;
+
+if isnumeric(envstates)
+    discrete_states=true;
+    tol = 1e-4;
+    maxiter = 100;
+end
+
+
+
 pseudoEcounts = false;
 pseudoTRcounts = false;
 verbose = false;
@@ -17,6 +29,7 @@ end
 numActions = guessPolicies{1}.outputs{2}.size;
 numStates = guessPolicies{1}.inputs{1}.size;
 initialPolicies = guessPolicies;
+
 % if checkE ~= numStates
 %     error(message('stats:hmmtrain:InputSizeMismatch'));
 % end
@@ -28,7 +41,7 @@ initialPolicies = guessPolicies;
 
 baumwelch = true;
 
-% if nargin > 5
+% if nargin > 7
 %     %if rem(nargin,2)== 0
 %     %    error(message('stats:hmmtrain:WrongNumberArgs', mfilename));
 %     %end
@@ -135,9 +148,10 @@ converged = false;
 loglik = 1; % loglik is the log likelihood of all sequences given the TR and E
 logliks = zeros(1,maxiter);
 for iteration = 1:maxiter
+    if discrete_states
+        state_action_probs = tabulate_neural_policies(policies,numStates);
+    end
     
-    state_action_probs = tabulate_neural_policies(policies,numStates);
-
     oldLL = loglik;
     loglik = 0;
     oldGuessTRr = guessTRr;
@@ -166,15 +180,24 @@ for iteration = 1:maxiter
             logGTRnr = log(guessTRnr);
             % f and b start at 0 so offset seq by one
             actionseq = [0 actionseq];
-            envstateseq = [0 envstateseq];
+            if discrete_states
+                envstateseq = [0, envstateseq];
+                envstateseq_1hot = onehot(envstateseq',1:numStates)';
+            else
+                envstateseq = [{[0,0]}, envstateseq]';
+                envstateseq_1hot = cell2mat(envstateseq)';
+            end
             rewardseq = [0 rewardseq];
             
             for k = 1:numPolicies
                 for l = 1:numPolicies
                     for i = 1:seqLength
-                        curr_state_action_prob = log(state_action_probs{envstateseq(i+1)}(l, actionseq(i+1)));
-                        %curr_state_actions_prob = log(policies{l}(envstateseq(i+1)));
-                        %curr_state_action_prob = curr_state_actions_prob(actionseq(i+1));
+                        if discrete_states
+                            curr_state_action_prob = log(state_action_probs{envstateseq(i+1)}(l, actionseq(i+1)));
+                        else
+                            curr_state_actions_prob = policies{l}(envstateseq{i+1}');
+                            curr_state_action_prob = log(curr_state_actions_prob(actionseq(i+1)));
+                        end
                         if (rewardseq(i) == 1)
                             TRr(k,l) = TRr(k,l) + exp( logf(k,i) + logGTRr(k,l) + curr_state_action_prob + logb(l,i+1))./scale(i+1); 
                         else
@@ -186,18 +209,26 @@ for iteration = 1:maxiter
             
             % optimize the policies by relatively by the probability that the trial i was in policy k 
             for k = 1:numPolicies
-%                 for i = 1:numActions
-%                     for j= 1:numStates
-%                         rel_trials_actions = find(actionseq == i);
-%                         state_j_trial = find(envstateseq==j);
-%                         pos = intersect(rel_trials_actions,state_j_trial);
-%                         policies(k,i) = policies(k,i) + sum(exp(logf(k,pos)+logb(k,pos)));
-%                         
-%                     end
-%                 end
-                all_states = onehot(envstateseq',1:numStates)';
+               
                 all_actions = onehot(actionseq',1:numActions)';
-                policies{k} = train(initialPolicies{k}, all_states, all_actions, [], [], exp(logf(k,:)+logb(k,:))); %(sum(exp(logf(k,pos_homo)+logb(k,pos_homo)))
+                [policies{k}, tr] = train(initialPolicies{k}, envstateseq_1hot, all_actions, [], [], exp(logf(k,:)+logb(k,:)));
+%                 %[policies{k}, tr] = train(initialPolicies{k}, envstateseq_1hot, all_actions);
+%                 figure
+%                 subplot(3,1,1) 
+%                 l = length(all_actions);
+%                 [~,action] = max(all_actions);
+%                 scatter(envstateseq_1hot(1,:), envstateseq_1hot(2,:), [], ones(1,l)*15.*action+20, 'filled')
+%                 
+%                 subplot(3,1,2) 
+%                 [~,network_actions] = max(initialPolicies{k}(envstateseq_1hot));
+%                 scatter(envstateseq_1hot(1,:), envstateseq_1hot(2,:), [], ones(1,l)*15.*network_actions+20,'filled')
+%                 
+%                 subplot(3,1,3) 
+%                 [~,network_actions] = max(policies{k}(envstateseq_1hot));
+%                 scatter(envstateseq_1hot(1,:), envstateseq_1hot(2,:),  exp(logf(k,:)+logb(k,:))*50+10, ones(1,l)*15.*network_actions+20,'filled')
+%                 
+%                 close
+                
             end
             %         else  % Viterbi training
             %             [estimatedStates,logPseq]  = hmmviterbi(seq,guessTR,guessE);
