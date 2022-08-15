@@ -1,4 +1,4 @@
-function CAHitrate_hmmvsmazehmm()
+function CAhitrate_hmmvsmazehmm()
 
 training_seq_lengths = floor(linspace(50,1300,25));
 repetitions = 25;
