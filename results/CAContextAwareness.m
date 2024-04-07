@@ -63,9 +63,10 @@ for rep=1:repetitions
     
     %Estimate
     try
+        tic
          estimatedstates_cahmm = scahmmviterbi(testseq.emissions,testseq.envtype,testseq.rewards,...
              theta_cahmm.trR,theta_cahmm.trNR,policies_hat);
-
+        toc
     catch exp
         estimatedstates_cahmm = ones(1,length(testseq.emissions));
         warning(exp.message);

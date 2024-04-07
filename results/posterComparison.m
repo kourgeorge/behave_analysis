@@ -40,7 +40,7 @@ for i=1:200
     
     [est_trR_mazehmm, est_trNR_mazehmm, est_eHomo_mazehmm,est_eHetro_mazehmm,logliks_mazehmm] =...
         mazehmmtrain(seq, envtype , rewards ,guess_trr ,guess_trnr, ...
-        guess_eH, guess_eT, 'VERBOSE', true, 'maxiterations', 500);
+        guess_eH, guess_eT, 'VERBOSE', false, 'maxiterations', 500);
     
     
     diff_tr_hmm = dist_prob_matrices(trNR, trNR, est_tr_hmm, est_tr_hmm);

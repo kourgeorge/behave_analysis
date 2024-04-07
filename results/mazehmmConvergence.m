@@ -2,9 +2,9 @@ function mazehmmConvergence()
 
 tr_res = [];
 e_res = [];
-steps = 40;
-from = 50;
-to = 2000;
+steps = 20;
+from = 0;
+to = 1500;
 
 repetition = 25;
 
@@ -114,10 +114,11 @@ function tot_error = run_mazehmm_train(seq_data, guess_trans_reward, guess_trans
 
 [theta_gt.trR, theta_gt.trNR, theta_gt.eH, theta_gt.eT] = get_real_parameters(0.1);
 
+tic
 [theta_hat.trR, theta_hat.trNR, theta_hat.eH, theta_hat.eT] = ...
     mazehmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess_trans_reward ,guess_trans_noreward ,...
-    guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', max_iterations);
-
+    guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', 100);
+toc
 
 [trans_JS,policies_JS] = paramatersJS(theta_gt,theta_hat);
 
@@ -130,9 +131,10 @@ function tot_error = run_hmm_train(seq_data, guess_trans,  guess_emit, max_itera
 
 [realTR, realTRnr, realEhomo, realEhetro] = get_gt_parameters(4);
 
+tic
 [est_trans, est_emits] = ...
     hmmtrain(seq_data.emissions, guess_trans, guess_emit, 'VERBOSE',false, 'maxiterations', max_iterations);
-
+toc
 
 [policies_match,diff_policies] = MatchandComparePolicies([{realEhomo},{realEhetro}],[{est_emits}, {est_emits}]);
 

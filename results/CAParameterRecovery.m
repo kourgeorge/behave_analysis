@@ -215,15 +215,15 @@ types = repmat({'Initial', 'Trained', 'Initial',...
 x = repmat({'(a)','(a)', '(b)','(b)', '(c)','(c)', '(d)','(d)'},reps,1);
 
 g(1,3)=gramm('x', x(:) ,'y',hitrate(:),'color',types(:));
-g(1,3).stat_boxplot('dodge',0.7, 'width',0.7)
+g(1,3).stat_boxplot('dodge',0.6, 'width',0.7)
 g(1,3).set_names('x',' ','y','$hitrate$','color','');
 g(1,3).axe_property('YLim',[0 1]);
 
-g(1,3).set_layout_options('legend_pos',[0.79 0.1 0.1 0.3])
+%g(1,3).set_layout_options('legend_pos',[0.79 0.1 0.1 0.3])
 
 %g(1,3).set_color_options('map','d3_10');
 
-% figs 2 and 3
+% figs 1 and 2
 
 categories = repmat({'Trained','Trained',...
     'Trained', 'Trained','Trained',...
@@ -253,17 +253,22 @@ g(1,1).axe_property('YLim',[0 0.3])
 g.set_order_options('color',-1);
 
 %g.coord_flip();
-g(1,2).set_color_options('map','d3_10');
 g(1,1).set_color_options('map','d3_10');
+g(1,2).set_color_options('map','d3_10');
+g(1,3).set_color_options('map','d3_10');
+
 g(1,1).no_legend();
-g(1,2).set_layout_options('legend_pos',[0.48 0.1 0.1 0.3])
+%g(1,2).no_legend();
+g(1,3).no_legend();
+%g(1,2).set_layout_options('legend_pos',[0.48 0.1 0.1 0.3])
+g(1,2).set_layout_options('legend_pos',[0.2 0.7 0.1 0.3])
 %g(1,1).axe_property('XTickLabel',[0.25,0.5,1]);
 %g(1,2).axe_property('XTickLabel',{'','0.5', '1'});
 figure();
 
 g.draw();
 set(gca,'TickLabelInterpreter','latex')
-g.export('file_name','noising-guess','file_type','png')
+g.export('file_name','noising-guess-neural','file_type','png')
 
 end
 

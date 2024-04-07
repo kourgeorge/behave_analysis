@@ -3,22 +3,22 @@ function CAhmmConvergence()
 tr_res = [];
 e_res = [];
 steps = 20;
-from = 50;
-to = 750;
+from = 0;
+to = 1500;
 
-repetition = 30;
+repetition = 25;
 
 for i=1:repetition
     [trdistances,edistances] = getdistanceforsequence(from,to,steps);
     tr_res=[tr_res;trdistances];
     e_res = [e_res; edistances];
 end
-save('CAhmmConvergence_res', tr_res, e_res)
-plot_results(tr_res, e_res)
+save('CAhmmConvergence_res', 'tr_res', 'e_res')
+plot_results(tr_res, e_res,from,to,steps)
 
 end
 
-function plot_results(tr_res, e_res)
+function plot_results(tr_res, e_res ,from,to,steps)
 figure;
 delta_color = [139,10,80]./255;
 pi_color = [69,139,116]./255;
@@ -98,11 +98,11 @@ function tot_error = run_cahmm_train(seq_data, theta_gt, guess, max_iterations)
 %     guess_emit_homo, guess_emit_hetro, 'VERBOSE',false, 'maxiterations', max_iterations);
 
 guess_policies = neurolate_tabular_policies({guess.eH , guess.eT});
-
+tic
 [theta_hat.trR, theta_hat.trNR, models_hat] = ...
     scahmmtrain(seq_data.emissions, seq_data.envtype , seq_data.rewards ,guess.trR  ,guess.trNR ,...
     guess_policies, 'VERBOSE', true, 'maxiterations', max_iterations);
-
+toc
 table_policies = tabulate_neural_policies(models_hat, 2);
 theta_hat.eH = table_policies{1};
 theta_hat.eT = table_policies{2};
