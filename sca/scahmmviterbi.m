@@ -47,6 +47,8 @@ function [currentPolicy, logP] = scahmmviterbi(actions, envstates, rewards, tr_r
 
 % tr must be square
 
+
+
 numPolicies = size(tr_noreward,1);
 checkTr = size(tr_noreward,2);
 if checkTr ~= numPolicies
@@ -60,7 +62,7 @@ end
 %     error(message('stats:hmmviterbi:InputSizeMismatch'));
 % end
 
-numActions = policies{1}.outputs{2}.size;
+numActions = policies{1}.outputs{end}.size;
 numStates = policies{1}.inputs{1}.size;
 customStatenames = false;
 
@@ -89,7 +91,18 @@ customStatenames = false;
 %     end
 % end
 
-%state_action_probs = tabulate_neural_policies(policies,numStates);
+
+discrete_states=false;
+
+if isnumeric(envstates)
+    discrete_states=true;
+    state_action_probs = tabulate_neural_policies(policies,numStates);
+else
+    envstateseq = cell2mat(envstates)';
+    for policy_ind = 1:numPolicies
+        state_action_probs{policy_ind} = policies{policy_ind}(envstateseq);
+    end
+end
 
 
 % work in log space to avoid numerical issues
@@ -122,9 +135,6 @@ for count = 1:L
         logTR = logTRnoreward;
     end
     
-    curr_state = envstates{count};
-    curr_action = actions(count);
-    
     for policy = 1:numPolicies
         % for each state we calculate
         % v(state) = e(state,seq(count))* max_k(vOld(:)*tr(k,state));
@@ -141,9 +151,13 @@ for count = 1:L
         % save the best transition information for later backtracking
         pTR(policy,count) = bestPTR;
         % update v
-        %actionsprobs = state_action_probs{curr_state}(policy,:); 
-        actionsprobs = policies{policy}(curr_state');
-        v(policy) = actionsprobs(curr_action) + bestVal;
+        if discrete_states
+            actionsprobs = state_action_probs{envstates(count)}(policy,:); 
+        else
+            actionsprobs = state_action_probs{policy}(:,count);
+        end
+        
+        v(policy) = actionsprobs(actions(count)) + bestVal;
     end
     vOld = v;
 end

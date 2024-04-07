@@ -67,6 +67,12 @@ discrete_states = false;
 if isnumeric(envstates)
     discrete_states=true;
     state_action_probs = tabulate_neural_policies(policies,numStates);
+else 
+    state_action_probs = cell(numPolicies,1);
+    tmp_states = [[0;0],cell2mat(envstates')'];
+    for policy_ind = 1:numPolicies
+        state_action_probs{policy_ind} = policies{policy_ind}(tmp_states);
+    end
 end
 
 
@@ -105,7 +111,7 @@ end
 if ~isnumeric(actionseq)
     error(message('stats:hmmdecode:MissingSymbolArg'));
 end
-numActions = policies{1}.outputs{2}.size;
+numActions = policies{1}.outputs{end}.size;
 if any(actionseq(:)<1) || any(actionseq(:)~=round(actionseq(:))) || any(actionseq(:)>numActions)
      error(message('stats:hmmdecode:BadSequence', numActions));
 end
@@ -146,7 +152,7 @@ for count = 2:L
         if discrete_states
             action_prob = state_action_probs{envstates(count)}(policy_ind, actionseq(count));
         else
-            all_actions_prob = policies{policy_ind}(envstates{count}');
+            all_actions_prob = state_action_probs{policy_ind}(:,count);
             action_prob = all_actions_prob(actionseq(count));
         end
         fs(policy_ind,count) = action_prob .* (sum(fs(:,count-1) .*tr(:,policy_ind)));
@@ -183,7 +189,7 @@ for count = L-1:-1:1
         if ~discrete_states
             b = zeros(numPolicies, 1);
             for p_j = 1:numPolicies
-               next_state_action_dist = policies{p_j}(envstates{count+1}');
+               next_state_action_dist = state_action_probs{p_j}(:,count+1);
                b(p_j) = next_state_action_dist(actionseq(count+1));
             end
         else
@@ -205,5 +211,7 @@ pStates = fs.*bs;
 
 % get rid of the column that we stuck in to deal with the f0 and b0 
 pStates(:,1) = [];
+
+end
 
 

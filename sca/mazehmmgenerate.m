@@ -1,6 +1,13 @@
-function [envtype,seq,states,rewards ] = mazehmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, envtypefrac, rewarded_emits)
+function [envtype, seq, states,rewards ] = mazehmmgenerate(L, TRReward, TRNoReward, eHomo, eHetro, reward_rule_transition)
 %SYNTHETIC_DATA Summary of this function goes here
 %   Detailed explanation goes here
+
+rule1 = [0 1; 1 0];
+rule2 = [1 0; 1 0];
+rule3 = [0 1; 0 1];
+rule4 = [1 0; 1 0];
+
+rules = {rule1, rule2, rule3, rule4};
 
 numStates = size(TRReward,1);
 numEmissions = size(eHomo,2);
@@ -9,6 +16,7 @@ numEmissions = size(eHomo,2);
 statechange = rand(1,L);
 randvals = rand(1,L);
 envtypechange = rand(1,L);
+rule_change = rand(1,L);
 
 % calculate cumulative probabilities
 trcReward = cumsum(TRReward,2);
@@ -28,10 +36,10 @@ seq = zeros(1,L);
 states = zeros(1,L);
 envtype = zeros(1,L);
 rewards = zeros(1,L);
-
+curr_rewarded_rule = 1;
 for count = 1:L
     % determine environment type
-    if (envtypechange(count) < envtypefrac)
+    if (envtypechange(count) < 0.5)
         currentconf = 1;
     else
         currentconf = 2;
@@ -72,10 +80,21 @@ for count = 1:L
             break
         end
     end
+    
+    % the rule change
+%     if (rule_change(count)< reward_rule_transition)
+%         curr_rewarded_rule = randi([1 4]);
+%     end
+    
+    if (mod(count,10)==0)
+        curr_rewarded_rule = randi([1 4]);
+    end
+    curr_rewarded_rule = 1;
+    
     % add values and states to output
     seq(count) = emit;
     states(count) = state;
     envtype(count) = currentconf;
-    rewards(count) = rewarded_emits(currentconf,emit);
+    rewards(count) = rules{curr_rewarded_rule}(currentconf,emit);
     currentstate = state;
 end

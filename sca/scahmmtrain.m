@@ -1,17 +1,17 @@
 function [guessTRr, guessTRnr, guessPolicies, logliks] = scahmmtrain(actions, envstates, rewards, guessTRr, guessTRnr, guessPolicies, varargin)
 
 
-tol = 1e-2;
+tol = 1e-3;
 trtol = tol;
 etol = tol;
-maxiter = 10;
+maxiter = 100;
 
 discrete_states=false;
 
 if isnumeric(envstates)
     discrete_states=true;
     tol = 1e-4;
-    maxiter = 100;
+    maxiter = 200;
 end
 
 
@@ -26,7 +26,7 @@ end
 
 % number of rows of e must be same as number of states
 
-numActions = guessPolicies{1}.outputs{2}.size;
+numActions = guessPolicies{1}.outputs{end}.size;
 numStates = guessPolicies{1}.inputs{1}.size;
 initialPolicies = guessPolicies;
 
@@ -148,9 +148,6 @@ converged = false;
 loglik = 1; % loglik is the log likelihood of all sequences given the TR and E
 logliks = zeros(1,maxiter);
 for iteration = 1:maxiter
-    if discrete_states
-        state_action_probs = tabulate_neural_policies(policies,numStates);
-    end
     
     oldLL = loglik;
     loglik = 0;
@@ -181,11 +178,17 @@ for iteration = 1:maxiter
             % f and b start at 0 so offset seq by one
             actionseq = [0 actionseq];
             if discrete_states
+                state_action_probs = tabulate_neural_policies(policies,numStates);
                 envstateseq = [0, envstateseq];
                 envstateseq_1hot = onehot(envstateseq',1:numStates)';
             else
                 envstateseq = [{[0,0]}, envstateseq]';
                 envstateseq_1hot = cell2mat(envstateseq)';
+                state_action_probs = cell(numPolicies,1);
+                for policy_ind = 1:numPolicies
+                    state_action_probs{policy_ind} = policies{policy_ind}(envstateseq_1hot);
+                end
+
             end
             rewardseq = [0 rewardseq];
             
@@ -195,7 +198,7 @@ for iteration = 1:maxiter
                         if discrete_states
                             curr_state_action_prob = log(state_action_probs{envstateseq(i+1)}(l, actionseq(i+1)));
                         else
-                            curr_state_actions_prob = policies{l}(envstateseq{i+1}');
+                            curr_state_actions_prob = state_action_probs{l}(:,i+1);
                             curr_state_action_prob = log(curr_state_actions_prob(actionseq(i+1)));
                         end
                         if (rewardseq(i) == 1)
@@ -212,7 +215,7 @@ for iteration = 1:maxiter
                
                 all_actions = onehot(actionseq',1:numActions)';
                 [policies{k}, tr] = train(initialPolicies{k}, envstateseq_1hot, all_actions, [], [], exp(logf(k,:)+logb(k,:)));
-%                 %[policies{k}, tr] = train(initialPolicies{k}, envstateseq_1hot, all_actions);
+                %[policies{k}, tr] = train(initialPolicies{k}, envstateseq_1hot, all_actions);
 %                 figure
 %                 subplot(3,1,1) 
 %                 l = length(all_actions);
