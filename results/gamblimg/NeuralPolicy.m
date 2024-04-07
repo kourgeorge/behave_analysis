@@ -16,6 +16,7 @@ classdef NeuralPolicy < handle
         function action = f(obj, state)            
             action_prob = obj.decision_network(state');
             [~,action] = max(action_prob);
+            action = action';
             %action = find(rand<cumsum(action_prob), 1, 'first');
         end
         

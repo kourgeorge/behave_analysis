@@ -11,6 +11,13 @@ action_dist1 = policy1.dist(states');
 action_dist2 = policy2.dist(states');
 div_lst= JSDiv(action_dist1,action_dist2);
 
+
+actions1 = policy1.f(states');
+actions2 = policy2.f(states');
+%div_lst= (actions1==actions2)*1;
+
+
+
 % figure;
 % subplot(2,1,1);
 % [~,actions] = max(action_dist1');

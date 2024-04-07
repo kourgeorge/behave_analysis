@@ -4,12 +4,7 @@ function [match,match_distances,policies_dist] = MatchGamblingPolicies(policies_
 
 
 num_policies = length(policies_set1);
-% 
-% policies1 = policies_set1;
-% policies2 = [];
-% for i=1:num_policies
-%     policies2 = [policies2; {NeuralPolicy(policies_set2{i})}];
-% end
+
 
 policies_dist = [];
 for i=1:num_policies

@@ -40,9 +40,9 @@ classdef GamblingGame < handle
         end
         
         
-        function optins = drawoptions(obj)
-            [chance,value]  = draw_gambling_option(obj.prob_range);
-            optins = [1,1; value, chance];
+        function options = drawoptions(obj)
+            [profit,chance]  = draw_gambling_option(obj.prob_range);
+            options = [1,1; profit, chance];
             %game(:,2) = -game(:,2);
             
         end

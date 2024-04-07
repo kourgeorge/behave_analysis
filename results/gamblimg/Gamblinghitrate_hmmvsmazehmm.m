@@ -56,7 +56,7 @@ end
 
 function hitrates = calcPdiv(training_seq_lengths)
 
-[theta_gt.trR, theta_gt.trNR, theta_gt.policies] = get_random_gt_parameters(2);
+theta_gt = get_neural_random_gt_parameters();
 
 
 %theta_gt = get_real_parameters(0.05);

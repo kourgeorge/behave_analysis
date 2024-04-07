@@ -17,17 +17,18 @@ classdef LinearPolicy < handle
         
         function action = f(obj, state)
             action_prob = dist(obj, state);
-            [~,action] = max(action_prob);
+            [~,action] = max(action_prob, [], 2) ;
         end
         
          function action_prob = dist(obj, state)
 %             log_prob = log10(state(2));
 %             log_profit = log10(state(1));
-            chance = state(:,1);
-            profit = state(:,2);
+            x = state(:,1);
+            y = state(:,2);
             %action = (chance > obj.a*profit+obj.b)+1;
             %action_prob = onehot(action,1:2);
-            action_prob = softmax([chance, obj.a*profit+obj.b]')';
+            border_y = obj.a*x+obj.b;
+            action_prob = softmax([border_y-y, zeros(size(state,1),1)]')';
             
              
 %             log_prob = log10(state(2));
