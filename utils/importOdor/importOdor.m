@@ -126,8 +126,8 @@ function pushbutton5_Callback(hObject, eventdata, handles)
 handles=guidata(hObject);
 
 %% Open file
-for file=handles.edit1.String'
-filefullpath = file{1};
+for i=1:length (handles.edit1.String)
+filefullpath = handles.edit1.String{i};
 fileID  = fopen(filefullpath, 'r');
 data    = textscan(fileID, '%s', 'delimiter', '');
 data    = cellstr(data{:});
@@ -202,13 +202,15 @@ writetable(sData, strcat(filefullpath,'.csv'),...
 
 handles.close_status = fclose(fileID);
 
+end
+
 set(handles.pushbutton5,'String','Done!');
 set(handles.pushbutton3,'Enable','off');
 set(handles.pushbutton5,'Enable','off');
 
 guidata(hObject,handles);
 
-end
+
 % --- Executes on button press in pushbutton6.
 function pushbutton6_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton6 (see GCBO)

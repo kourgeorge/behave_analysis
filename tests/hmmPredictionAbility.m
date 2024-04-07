@@ -47,9 +47,9 @@ for sequence_length = sequence_lengths
         permutation = randperm(length(train_actions));
         theta_s = estimate_model_parameters(train_actions(permutation));
 
-        [~, theta_gt.tr, theta_gt.em, ~] = getModelParameters( 0.01 , 'guess' );
+        theta_gt = getModelParameters( 0.01 , 'guess' );
         
-        [~, theta_r.tr, theta_r.em, ~] = getModelParameters( 0.01 , 'random' );
+        theta_r = getModelParameters( 0.01 , 'random' );
         
         [test_actions,test_states]= generate_synthetic_sequence(100);
         
@@ -97,9 +97,9 @@ end
 
 function estimated_parameters = estimate_model_parameters(action)
 eps = 0.01;
-[ ~,  guess_trans_reward, guess_emit_homo, ~] = getModelParameters( eps, 'uniform');
+theta = getModelParameters( eps, 'uniform');
 [estimated_parameters.tr, ...
-    estimated_parameters.em] = hmmtrain(action, guess_trans_reward, guess_emit_homo,...
+    estimated_parameters.em] = hmmtrain(action, theta.trR, theta.eH,...
     'VERBOSE', false, 'maxiterations', 500, 'TOLERANCE',0.01);
 end
 
@@ -107,8 +107,8 @@ end
 
 function [seq,states] = generate_synthetic_sequence(num_trials)
 
-[ ~,  trR, eH, ~] = getModelParameters( 0.01 , 'guess' );
-[seq,states] = hmmgenerate(num_trials, trR, eH);
+theta = getModelParameters( 0.01 , 'guess' );
+[seq,states] = hmmgenerate(num_trials, theta.trR, theta.eH);
 
 end
 

@@ -19,6 +19,7 @@ function [res] = loadRatExpData(csv_file_path, odorRelevant)
 %      6. The choosen option
 
 data = csvread(csv_file_path,1,0);
+
 data(data(:,4)==0,:) = [];
 numTrials = size(data,1);
 res = zeros(numTrials, 6);
@@ -37,6 +38,7 @@ for i=1:numTrials
     
     reward = (chosen_door==correct_door);
     
+    %We assume that the correct relevant cue is 1,
     if (chosen_door==correct_door)
         chosen_relevant_cue = 1;
     else
