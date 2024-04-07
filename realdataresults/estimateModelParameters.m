@@ -1,4 +1,4 @@
-function theta = estimateModelParameters( behave_data, varargin )
+function [theta,action,rewards,envtype] = estimateModelParameters( behave_data, varargin )
 %ESTIMATEMODELPARAMETERS 
 %Input: a csv contain the behavioral data of the rat. 
 %Output: the SCA-HMM model parameters.
