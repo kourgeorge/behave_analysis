@@ -1,13 +1,9 @@
-function plotPsthByStrategy2()
-
-%Example: plotPsthByStrategy2('D:\lab', '004_26012016', 'TT1 - Copy_SS_03.ntt' , '004_26012016-strategy.csv')
+function plotPsthByStrategy()
 
 baseFolder = 'D:\lab';
-EventDate='004_28012016';
+EventDate='004_31012016';
 SpikeClust='TT8 - Copy_SS_04.ntt';
-behaviorFileName = '004_26012016-strategy.csv';
 eventName = 'aBeamExit';
-
 
 sigma=20;
 win=gauss(sigma);
@@ -20,23 +16,19 @@ st=st/1e6;
 %load the event file
 eventfile=fullfile(baseFolder,EventDate);
 events = load(fullfile(eventfile, 'events.mat'));
-events = events.eventsStruct;
-
-events = cleanRedundantEvents(events);
 
 %load the stability intervals
 stability = load(fullfile(eventfile, ['stability_', SpikeClust, '.mat']));
 
-
-%load the behavior file
-behave_data = csvread(fullfile(baseFolder,EventDate,behaviorFileName), 1, 0);
-strategy_column = 9;
-strategies = behave_data(1:end-1, strategy_column); % avoid the last line - it contains noise, the strategy is in column 9
-
-% select an event
-
-        
+strategies = events.strategy;
+psth_all = [];
+subplot_loc = [1,2,5,6];
 for q=1:length(stability.stStart)
+    
+    figure('pos',[10 10 900 600])
+    set(0,'DefaultTextInterpreter','none')
+    suptitle(['Event: ', eventName,'. Cell: ', SpikeClust, ...
+        ' Day: ', EventDate])
     
     for strategy=1:4
         
@@ -53,16 +45,40 @@ for q=1:length(stability.stStart)
         
         rewardedTrials = unique(eventsStructForStrategy.rewards(:,3));
         
+        
         event = eventsStructForStrategy.(eventName);
         [event, eventCorrect, eventInCorrect] = getEventSpikeInterval(event, rewardedTrials, stStart(q), stEnd(q));
+        
+        event = eventCorrect;
         [Psth, Spikes] = CalcPSTHAroundEvent( event, st, 1.0, 1.0, win, 2000);
         
-        figure('pos',[10 10 900 600])
-        drawPSTHandSpikes(Psth,Spikes,1,1,2000)
-        set(0,'DefaultTextInterpreter','none')
-        suptitle(['Event: ', eventName,'. Strategy: ',num2str(strategy), ' Cell: ', SpikeClust ,' Day: ', EventDate])
-        saveas(gcf,[eventName,num2str(strategy),'.jpg'])        
+        psth_all = [psth_all;Psth];
+        
+        range1 = 1;
+        range2 = 1;
+        timecut = 2000;
+        subplot(5,2,subplot_loc(strategy))
+        drawPSTH(Psth,range1,range2,timecut)
+        title(['S', num2str(strategy), '    #events=', num2str(size(event,1)), '     #nz=', num2str(nnz(Spikes))])
+        subplot(5,2,subplot_loc(strategy)+2)
+        drawSpikes(Spikes, timecut)  
+
     end
+    [Psth, Spikes] = CalcPSTHAroundEvent( events.(eventName), st, 1.0, 1.0, win, 2000);
+    
+    subplot(5,2,9)
+    hold on;
+    plot(linspace(-1,1,2000), psth_all', 'linewidth', 2)
+    bar(linspace(-1,1,2000),Psth,'k');
+    axis tight;
+    ylim([0 15])
+    legend('S1', 'S2', 'S3', 'S4')
+     title(['#events=', num2str(size(events.(eventName),1)), '     #nz=', num2str(nnz(Spikes))])
+    hold off;
+    subplot(5,2,10)
+    drawSpikes(Spikes, timecut)
+    %saveas(gcf,[EventDate,SpikeClust,eventName,num2str(strategy),'.jpg'])
+    
 end
 
 end
@@ -71,23 +87,26 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%% HELPER FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function drawPSTHandSpikes(psth,spikes,range1,range2,timecut)
-subplot(2,1,1)
+function drawPSTH(psth,range1,range2,timecut)
 bar(linspace(-range1,range2,timecut),psth,'k');
 axis tight; box off; grid off;
-subplot(2,1,2)
+ylim([0 15])
+end
+
+function drawSpikes(spikes, timecut)
 spy(spikes,'k.')
+xlabel('')
+xticks([0 1000 2000])
+xticklabels({'-1', '0', '1'})
 axis normal
-xlabel = -timecut/2: 500 :timecut/2;
-set(gca,'XTick', xlabel);
 end
 
 function [eventInInterval, eventInIntervalRewarded, eventInIntervalNonRewarded] = ...
     getEventSpikeInterval(eventData, rewardedTrials, startPoint, endPoint)
 %we assume that the trial number is in the last field.
 eventInInterval = getSpikeInterval(eventData, startPoint, endPoint);
-eventInIntervalRewarded = getSpikeInterval(eventData(ismember(eventData(:,end),rewardedTrials),:), startPoint, endPoint);
-eventInIntervalNonRewarded = getSpikeInterval(eventData(~ismember(eventData(:,end),rewardedTrials),:), startPoint, endPoint);
+eventInIntervalRewarded = eventInInterval(ismember(eventInInterval(:,end),rewardedTrials),:);
+eventInIntervalNonRewarded = eventInInterval(~ismember(eventInInterval(:,end),rewardedTrials),:);
 
 end
 
@@ -114,7 +133,6 @@ eventsWithStrategy =  eventData(ismember(eventData(:,end), trialsWithStrategy),:
 end
 
 function eventStruct = keepTrialsWithinStrategyInEventsStruct(eventStruct, trialsWithStrategy)
-
 % get the events that are were performed in trials that are in trialsWithStrategy
 
 fields = fieldnames(eventStruct);
@@ -124,38 +142,4 @@ for fn=fields'
         eventStruct.(fn{1}) = getEventsWithinStrategy(eventData, trialsWithStrategy);
     end
 end
-end
-
-function events = cleanRedundantEvents(events)
-
-%keep the last Ain
-trials = events.aBeamEnter(:,end);
-indicesLasteventInTrial = getLastInSeq(trials);
-events.aBeamEnter = events.aBeamEnter(indicesLasteventInTrial,:);
-
-%keep the first Bin
-trials = events.bBeamEnter(:,end);
-indicesFirsteventInTrial = getFirstInSeq(trials);
-events.bBeamEnter = events.bBeamEnter(indicesFirsteventInTrial,:);
-
-
-%keep the last bout
-trials = events.bBeamExit(:,end);
-indicesLasteventInTrial = getLastInSeq(trials);
-events.bBeamExit = events.bBeamExit(indicesLasteventInTrial,:);
-
-%keep the first Aout
-trials = events.aBeamExit(:,end);
-indicesFirsteventInTrial = getFirstInSeq(trials);
-events.aBeamExit = events.aBeamExit(indicesFirsteventInTrial,:);
-
-end
-
-
-function ind = getFirstInSeq(arr)
-ind  = find([1;arr(2:end)-arr(1:end-1)]);
-end
-
-function ind = getLastInSeq(arr)
-ind  = find([arr(2:end)-arr(1:end-1);1]);
 end
